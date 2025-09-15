@@ -6,9 +6,10 @@ const supabaseClient = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   {
     auth: {
-      flowType: 'pkce',
       autoRefreshToken: true,
-      persistSession: true
+      persistSession: true,
+      detectSessionInUrl: false, // We'll handle this manually
+      storage: typeof window !== 'undefined' ? window.localStorage : undefined
     }
   }
 );
