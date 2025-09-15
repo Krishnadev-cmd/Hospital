@@ -11,73 +11,117 @@ export default function CallbackClientPage() {
   useEffect(() => {
     const handleAuth = async () => {
       try {
-        const code = searchParams.get('code')
+        // First, let Supabase handle the callback automatically
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
         
+        if (sessionError) {
+          console.error('Session error:', sessionError)
+        } else if (sessionData.session) {
+          console.log('Session found, redirecting to dashboard')
+          router.push('/')
+          return
+        }
+
+        // If no session, try to handle the URL parameters manually
+        const code = searchParams.get('code')
+        const accessToken = searchParams.get('access_token')
+        
+        // Handle implicit flow from URL hash
+        if (!code && !accessToken && typeof window !== 'undefined') {
+          const hashParams = new URLSearchParams(window.location.hash.substring(1))
+          const hashAccessToken = hashParams.get('access_token')
+          const hashRefreshToken = hashParams.get('refresh_token')
+          
+          if (hashAccessToken) {
+            console.log('Handling implicit flow with access token from hash')
+            const { data: setSessionData, error: setSessionError } = await supabase.auth.setSession({
+              access_token: hashAccessToken,
+              refresh_token: hashRefreshToken || ''
+            })
+            
+            if (setSessionError) {
+              console.error('Set session error:', setSessionError)
+              router.push('/login?error=auth_failed')
+              return
+            }
+            
+            if (setSessionData.session) {
+              console.log('Implicit authentication successful')
+              router.push('/')
+              return
+            }
+          }
+        }
+
+        // Handle authorization code flow
         if (code) {
-          // Handle PKCE flow - exchange code for session on client-side
-          console.log('Handling PKCE flow with code:', code)
+          console.log('Handling authorization code flow with code:', code)
+          
+          // Debug: Check what's in localStorage
+          console.log('LocalStorage contents:', {
+            keys: Object.keys(localStorage),
+            allSupabaseKeys: Object.keys(localStorage).filter(key => key.includes('supabase') || key.includes('sb-')),
+            allAuthKeys: Object.keys(localStorage).filter(key => key.includes('auth')),
+            allItems: Object.entries(localStorage)
+          })
+          
           const { data, error } = await supabase.auth.exchangeCodeForSession(code)
           
           if (error) {
-            console.error('PKCE exchange error:', error)
+            console.error('Code exchange error:', error)
+            // Try alternative: get session which might work
+            const { data: altSessionData } = await supabase.auth.getSession()
+            if (altSessionData.session) {
+              console.log('Alternative session check successful')
+              router.push('/')
+              return
+            }
             router.push('/login?error=auth_failed')
             return
           }
           
           if (data.session) {
-            console.log('PKCE authentication successful')
+            console.log('Code exchange successful')
             router.push('/')
             return
           }
         }
 
-        // Check if there's already a session
-        const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
-        
-        if (sessionError) {
-          console.error('Session error:', sessionError)
-          router.push('/login?error=auth_failed')
-          return
-        }
-
-        if (sessionData.session) {
-          // Already authenticated
-          router.push('/')
-          return
-        }
-
-        // Handle implicit flow - check URL hash for tokens
-        const hashParams = new URLSearchParams(window.location.hash.substring(1))
-        const accessToken = hashParams.get('access_token')
-        const refreshToken = hashParams.get('refresh_token')
-        
-        if (accessToken && refreshToken) {
-          console.log('Handling implicit flow with tokens from hash')
-          // Set the session using the tokens from URL hash
-          const { error: setSessionError } = await supabase.auth.setSession({
+        // Handle implicit flow from URL parameters
+        if (accessToken) {
+          console.log('Handling implicit flow with access token from URL params')
+          const refreshToken = searchParams.get('refresh_token')
+          const { data: setSessionData, error: setSessionError } = await supabase.auth.setSession({
             access_token: accessToken,
-            refresh_token: refreshToken
+            refresh_token: refreshToken || ''
           })
           
           if (setSessionError) {
             console.error('Set session error:', setSessionError)
             router.push('/login?error=auth_failed')
-          } else {
-            console.log('Implicit flow authentication successful')
-            router.push('/')
+            return
           }
-        } else {
-          // No code, no session, no tokens - redirect to login
-          console.log('No authentication data found, redirecting to login')
-          router.push('/login?error=no_auth_data')
+          
+          if (setSessionData.session) {
+            console.log('Implicit authentication successful')
+            router.push('/')
+            return
+          }
         }
+
+        // No valid authentication found
+        console.log('No valid authentication found, redirecting to login')
+        router.push('/login?error=no_auth_data')
+        
       } catch (error) {
-        console.error('Callback error:', error)
+        console.error('Auth callback error:', error)
         router.push('/login?error=auth_failed')
       }
     }
 
-    handleAuth()
+    // Add a small delay to ensure URL params are available
+    const timer = setTimeout(handleAuth, 100)
+    return () => clearTimeout(timer)
   }, [router, searchParams])
 
   return (
