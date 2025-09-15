@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { Button } from '../../components/ui/button';
 import PatientList from '../../components/patients/PatientList';
 import AppointmentList from '../../components/appointments/AppointmentList';
-import ClinicalOperations from '../../components/clinical/ClinicalOperations';
+import ClinicalOperations from '@/components/clinical/ClinicalOperations';
 import BillingOperations from '../../components/billing/BillingOperations';
 import Reports from '../../components/reports/Reports';
 import { patientService, appointmentService, SupabasePatient } from '../../lib/services/supabase';
