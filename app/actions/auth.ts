@@ -4,14 +4,21 @@ export const handleSignInWithGoogle = async () => {
     try {   
       await supabase.auth.signOut()
       
+      // Clear any existing auth data
+      localStorage.removeItem('sb-jrlrwwbvhspechxaodrd-auth-token')
+      localStorage.removeItem('supabase.auth.token')
+      
+      const redirectUrl = `${window.location.origin}/auth/callback`
+      console.log('Using redirect URL:', redirectUrl)
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-          // queryParams: {
-          //   access_type: 'offline',
-          //   prompt: 'consent',
-          // }
+          redirectTo: redirectUrl,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
         },
       })
 
