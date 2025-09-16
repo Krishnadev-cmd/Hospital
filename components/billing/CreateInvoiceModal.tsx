@@ -6,6 +6,7 @@ import { Input } from '../ui/input';
 import { Card, CardContent } from '../ui/card';
 import { FileText, X, User, Calendar, Plus, Minus } from 'lucide-react';
 import { UIPatient, UIInvoice } from '../../lib/services/fhir';
+import { patientService, billingService } from '../../lib/services/fhir'; 
 
 interface CreateInvoiceModalProps {
   isOpen: boolean;
@@ -77,27 +78,24 @@ export default function CreateInvoiceModal({ isOpen, onClose, onInvoiceCreated, 
     calculateTotals();
   }, [formData.items, formData.tax_amount, formData.discount_amount]);
 
-  const loadPatients = async () => {
+  const loadPatients = async (searchText?: string) => {
     try {
-      // For demo purposes, return mock patient data
-      const mockPatients: UIPatient[] = [
-        {
-          id: '1',
-          first_name: 'John',
-          last_name: 'Doe',
-          date_of_birth: '1980-01-01',
-          gender: 'male',
-          phone: '555-0123',
-          email: 'john.doe@email.com',
-          active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          mrn: 'MRN001'
-        }
-      ];
-      setPatients(mockPatients);
-    } catch (error) {
-      console.error('Error loading patients:', error);
+      setLoading(true);
+
+      const result = await patientService.getPatients({
+        search: searchText || undefined,
+        limit: 50
+      });
+
+      if (result.success) {
+        setPatients(result.data || []);
+      } else {
+        setError(result.error || 'Failed to load patients');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -139,8 +137,11 @@ export default function CreateInvoiceModal({ isOpen, onClose, onInvoiceCreated, 
     try {
       const userId = await getCurrentUser();
       
+      const selectedPatientData = patients.find(p => p.id === formData.patient_id);
+      
       const invoiceData: Partial<UIInvoice> = {
         patient_id: formData.patient_id,
+        patient_name: selectedPatientData ? `${selectedPatientData.first_name} ${selectedPatientData.last_name}` : 'Unknown Patient',
         amount: formData.total_amount,
         status: 'pending',
         due_date: formData.due_date,
@@ -156,8 +157,8 @@ export default function CreateInvoiceModal({ isOpen, onClose, onInvoiceCreated, 
 
       console.log('Creating invoice with data:', invoiceData);
       
-      // For demo purposes, simulate successful invoice creation
-      const result = { success: true, data: { ...invoiceData, id: 'inv_' + Date.now() } };
+      // Use the actual billing service to create the invoice
+      const result = await billingService.createInvoice(invoiceData);
 
       if (result.success) {
         alert('Invoice created successfully!');
@@ -165,8 +166,8 @@ export default function CreateInvoiceModal({ isOpen, onClose, onInvoiceCreated, 
         onClose();
         resetForm();
       } else {
-        console.error('Invoice creation failed');
-        setError('Failed to create invoice');
+        console.error('Invoice creation failed:', result.error);
+        setError(result.error || 'Failed to create invoice');
       }
     } catch (err) {
       console.error('Unexpected error:', err);

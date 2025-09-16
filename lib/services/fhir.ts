@@ -1451,6 +1451,25 @@ class FHIRClinicalService {
   }
 }
 
+// In-memory storage for demo purposes
+const inMemoryInvoices: UIInvoice[] = [
+  {
+    id: '1',
+    patient_id: '1',
+    patient_name: 'John Doe',
+    amount: 450.00,
+    status: 'paid',
+    due_date: '2024-02-15',
+    service_date: '2024-01-15',
+    services: ['Consultation', 'Lab Work', 'X-Ray'],
+    insurance_provider: 'Blue Cross Blue Shield',
+    claim_number: 'BC-2024-001',
+    paid_amount: 450.00,
+    created_at: '2024-01-15T10:30:00Z',
+    updated_at: '2024-01-15T10:30:00Z'
+  }
+];
+
 class FHIRBillingService {
   private async fetchWithFHIRHeaders(url: string, options: RequestInit = {}): Promise<Response> {
     const headers: Record<string, string> = {
@@ -1496,28 +1515,14 @@ class FHIRBillingService {
 
       const data = await response.json();
       
-      // Mock transformation - in real implementation, transform FHIR resources
-      const mockInvoices: UIInvoice[] = [
-        {
-          id: '1',
-          patient_id: params.patientId || '1',
-          patient_name: 'John Doe',
-          amount: 450.00,
-          status: 'paid',
-          due_date: '2024-02-15',
-          service_date: '2024-01-15',
-          services: ['Consultation', 'Lab Work', 'X-Ray'],
-          insurance_provider: 'Blue Cross Blue Shield',
-          claim_number: 'BC-2024-001',
-          paid_amount: 450.00,
-          created_at: '2024-01-15T10:30:00Z',
-          updated_at: '2024-01-15T10:30:00Z'
-        }
-      ];
+      // For demo purposes, return in-memory invoices
+      const filteredInvoices = params.patientId 
+        ? inMemoryInvoices.filter(inv => inv.patient_id === params.patientId)
+        : inMemoryInvoices;
 
       return {
         success: true,
-        data: mockInvoices
+        data: filteredInvoices
       };
     } catch (error) {
       return {
@@ -1549,7 +1554,7 @@ class FHIRBillingService {
         };
       }
 
-      // Mock successful creation
+      // Mock successful creation - add to in-memory storage
       const createdInvoice: UIInvoice = {
         id: `inv-${Date.now()}`,
         patient_id: invoiceData.patient_id || '',
@@ -1562,6 +1567,9 @@ class FHIRBillingService {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
+
+      // Add to in-memory storage
+      inMemoryInvoices.push(createdInvoice);
 
       return {
         success: true,
