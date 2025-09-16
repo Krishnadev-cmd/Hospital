@@ -2,7 +2,19 @@
 
 
 
-A comprehensive Electronic Health Records (EHR) system built with Next.js 15 and Supabase, providing a complete healthcare management dashboard.A comprehensive Electronic Health Records (EHR) system built with Next.js 15, integrating with Oracle Health FHIR APIs to provide a complete healthcare management dashboard.
+# Hospital EHR Management System
+
+A comprehensive Electronic Health Records (EHR) system built with Next.js 15, integrating with Oracle Health FHIR APIs to provide a complete healthcare management dashboard.
+
+![Next.js](https://img.shields.io/badge/Next.js-15-black)
+![React](https://img.shields.io/badge/React-19-blue)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
+![FHIR](https://img.shields.io/badge/FHIR-R4-green)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-3.4-38B2AC)
+
+## 📋 Overview
+
+A modern, responsive Electronic Health Records system designed for healthcare providers. Features comprehensive patient management, appointment scheduling, clinical documentation, billing operations, and FHIR-compliant data integration.
 
 
 
@@ -106,9 +118,13 @@ Create a `.env.local` file:- **Error Handling** with retry mechanisms
 
 ```env- **Pagination** support for large datasets
 
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+# FHIR Server Configuration
+FHIR_BASE_URL=your-fhir-server-url
+FHIR_CLIENT_ID=your-fhir-client-id
+FHIR_CLIENT_SECRET=your-fhir-client-secret
+FHIR_ACCESS_TOKEN=your-access-token
 
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key### Security Features
+### Security Features
 
 ```- **Supabase Authentication** with Google OAuth
 
@@ -116,7 +132,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key### Security Features
 
 4. **Database Setup**- **Environment Variables** for sensitive configuration
 
-Run the SQL schema in your Supabase SQL editor (see `database/schema.sql`)- **Input Validation** and sanitization
+Run the SQL schema in your FHIR server (see `FHIR-SERVER-SETUP.md`)- **Input Validation** and sanitization
 
 - **Error Boundaries** and graceful degradation
 
@@ -156,7 +172,7 @@ hospital/
 
 ├── lib/├── lib/                  # Core libraries
 
-│   ├── services/         # Supabase service layer│   ├── api/             # EHR API integration
+│   ├── api/             # FHIR API integration
 
 │   └── types/           # TypeScript definitions│   ├── types/           # TypeScript definitions
 
@@ -189,8 +205,10 @@ npm install
 2. **Configure environment variables:**
 ```bash
 # .env.local
-NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+FHIR_BASE_URL=your-fhir-server-url
+FHIR_CLIENT_ID=your-fhir-client-id
+FHIR_CLIENT_SECRET=your-fhir-client-secret
+FHIR_ACCESS_TOKEN=your-access-token
 
 # EHR API Configuration
 NEXT_PUBLIC_EHR_BASE_URL=https://fhir-ehr-code.cerner.com/dstu2/ec2458f2-1e24-41c8-b71b-0e701af7583d
@@ -216,7 +234,7 @@ http://localhost:3000 (or 3001 if 3000 is busy)
 
 1. **Initial Access**: Navigate to the application
 2. **Login Required**: Redirected to Google OAuth login
-3. **OAuth Flow**: Secure PKCE authentication via Supabase
+3. **OAuth Flow**: Secure PKCE authentication via FHIR-compliant identity providers
 4. **Session Management**: Persistent sessions with auto-refresh
 5. **Dashboard Access**: Full EHR functionality after authentication
 
