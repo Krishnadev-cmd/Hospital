@@ -8,6 +8,80 @@ export interface APIResponse<T> {
   message?: string;
 }
 
+// Core Entity Types
+export interface UIPatient {
+  id: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  gender: 'male' | 'female' | 'other' | 'unknown';
+  phone: string;
+  email: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  emergencyContact?: string;
+  emergencyPhone?: string;
+  status: PatientStatus;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface UIAppointment {
+  id: string;
+  patientId: string;
+  patientName?: string;
+  practitionerId?: string;
+  practitionerName?: string;
+  date: string;
+  time: string;
+  duration: number;
+  type: string;
+  status: AppointmentStatus;
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface UIInvoice {
+  id: string;
+  patient_id: string;
+  invoice_number: string;
+  issue_date: string;
+  due_date: string;
+  subtotal: number;
+  tax_amount: number;
+  discount_amount: number;
+  total_amount: number;
+  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
+  notes?: string;
+  items: InvoiceItem[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface InvoiceItem {
+  id?: string;
+  service_code: string;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  total?: number;
+}
+
+export interface UIClinicalNote {
+  id: string;
+  patient_id: string;
+  note_type: 'progress_note' | 'consultation' | 'discharge_summary' | 'admission_note' | 'procedure_note' | 'other';
+  subject: string;
+  content: string;
+  is_confidential: boolean;
+  author_id: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 // Pagination
 export interface PaginationParams {
   page?: number;

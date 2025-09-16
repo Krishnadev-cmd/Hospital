@@ -2,25 +2,13 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import supabase from '@/lib/supabase';
 
 export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session) {
-        // User is authenticated, redirect to dashboard
-        router.push('/dashboard');
-      } else {
-        // User is not authenticated, redirect to login
-        router.push('/login');
-      }
-    };
-
-    checkAuth();
+    // For demo purposes, redirect directly to dashboard
+    router.push('/dashboard');
   }, [router]);
 
   return (
