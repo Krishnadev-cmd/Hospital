@@ -18,11 +18,11 @@ import AppointmentList from '../../components/appointments/AppointmentList';
 import ClinicalOperations from '@/components/clinical/ClinicalOperations';
 import BillingOperations from '../../components/billing/BillingOperations';
 import Reports from '../../components/reports/Reports';
-import { patientService, appointmentService, SupabasePatient } from '../../lib/services/fhir';
+import { patientService, appointmentService, UIPatient } from '../../lib/services/fhir';
 
 export default function Dashboard() {
   const [activeSection, setActiveSection] = useState('overview');
-  const [selectedPatient, setSelectedPatient] = useState<SupabasePatient | null>(null);
+  const [selectedPatient, setSelectedPatient] = useState<UIPatient | null>(null);
   const [stats, setStats] = useState({
     totalPatients: 0,
     todaysAppointments: 0,

@@ -1,4 +1,4 @@
-// Application Types for EHR System with Supabase
+// Application Types for FHIR-based EHR System
 
 // API Response wrapper
 export interface APIResponse<T> {

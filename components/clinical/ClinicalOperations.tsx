@@ -24,7 +24,7 @@ import {
   UIVitalSign,
   UIClinicalNote,
   UICondition,
-  SupabasePatient
+  UIPatient
 } from '../../lib/services/fhir';
 
 interface UILabResult {
@@ -56,7 +56,7 @@ interface UIDiagnosticReport {
 }
 
 interface ClinicalOperationsProps {
-  selectedPatient?: SupabasePatient | null;
+  selectedPatient?: UIPatient | null;
 }
 
 export default function ClinicalOperations({ selectedPatient }: ClinicalOperationsProps) {

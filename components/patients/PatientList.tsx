@@ -5,22 +5,22 @@ import { Search, Plus, Filter, MoreVertical, Phone, Mail, MapPin, Calendar, User
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { patientService, SupabasePatient } from '../../lib/services/fhir';
+import { patientService, UIPatient } from '../../lib/services/fhir';
 import PatientForm from './PatientForm';
 
 interface PatientListProps {
-  onPatientSelect?: (patient: SupabasePatient) => void;
+  onPatientSelect?: (patient: UIPatient) => void;
   onNewPatient?: () => void;
 }
 
 export default function PatientList({ onPatientSelect, onNewPatient }: PatientListProps) {
-  const [patients, setPatients] = useState<SupabasePatient[]>([]);
+  const [patients, setPatients] = useState<UIPatient[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedPatient, setSelectedPatient] = useState<SupabasePatient | null>(null);
+  const [selectedPatient, setSelectedPatient] = useState<UIPatient | null>(null);
   const [showPatientForm, setShowPatientForm] = useState(false);
-  const [editingPatient, setEditingPatient] = useState<SupabasePatient | null>(null);
+  const [editingPatient, setEditingPatient] = useState<UIPatient | null>(null);
 
   const loadPatients = async (searchText?: string) => {
     try {
@@ -58,7 +58,7 @@ export default function PatientList({ onPatientSelect, onNewPatient }: PatientLi
     }
   };
 
-  const formatPatientName = (patient: SupabasePatient): string => {
+  const formatPatientName = (patient: UIPatient): string => {
     const firstName = patient.first_name || '';
     const middleName = patient.middle_name ? ` ${patient.middle_name}` : '';
     const lastName = patient.last_name || '';
@@ -81,7 +81,7 @@ export default function PatientList({ onPatientSelect, onNewPatient }: PatientLi
     return age;
   };
 
-  const formatAddress = (patient: SupabasePatient): string => {
+  const formatAddress = (patient: UIPatient): string => {
     const parts = [
       patient.street_address,
       patient.city,
@@ -92,7 +92,7 @@ export default function PatientList({ onPatientSelect, onNewPatient }: PatientLi
     return parts.join(', ') || 'No address provided';
   };
 
-  const handlePatientClick = (patient: SupabasePatient) => {
+  const handlePatientClick = (patient: UIPatient) => {
     setSelectedPatient(patient);
     onPatientSelect?.(patient);
   };
@@ -113,7 +113,7 @@ export default function PatientList({ onPatientSelect, onNewPatient }: PatientLi
     }
   };
 
-  const handleEditPatient = (patient: SupabasePatient, e: React.MouseEvent) => {
+  const handleEditPatient = (patient: UIPatient, e: React.MouseEvent) => {
     e.stopPropagation();
     setEditingPatient(patient);
     setShowPatientForm(true);
@@ -130,7 +130,7 @@ export default function PatientList({ onPatientSelect, onNewPatient }: PatientLi
     setEditingPatient(null);
   };
 
-  const handlePatientCreated = (patient: SupabasePatient) => {
+  const handlePatientCreated = (patient: UIPatient) => {
     loadPatients(searchTerm || undefined);
     setSelectedPatient(patient);
   };

@@ -1,5 +1,5 @@
 // UI-compatible service layer for FHIR integration
-// This service provides the same interface as the Supabase service but uses FHIR APIs
+// This service provides FHIR-compliant interfaces for healthcare data operations
 
 export interface UIPatient {
   id: string;
@@ -242,7 +242,7 @@ class FHIRPatientService {
         };
       }
 
-      // Transform FHIR UIPatient data to match Supabase interface
+      // Transform FHIR UIPatient data to UI format
       const transformedPatients: UIPatient[] = (data.data || []).map((patient: any) => ({
         id: patient.id,
         first_name: patient.first_name || '',
@@ -304,7 +304,7 @@ class FHIRPatientService {
         };
       }
 
-      // Transform FHIR patient data to match Supabase interface
+      // Transform FHIR patient data to UI format
       const patient = data.data;
       const transformedPatient: UIPatient = {
         id: patient.id,
@@ -1658,15 +1658,8 @@ class FHIRBillingService {
   }
 }
 
-// Export services with the same interface as Supabase
+// Export FHIR services
 export const patientService = new FHIRPatientService();
 export const appointmentService = new FHIRAppointmentService();
 export const clinicalService = new FHIRClinicalService();
 export const billingService = new FHIRBillingService();
-
-// Export types for compatibility
-export type SupabasePatient = UIPatient;
-export type SupabaseAppointment = UIAppointment;
-export type SupabasePrescription = UIMedication;
-export type SupabaseVitalSign = UIVitalSign;
-export type SupabaseClinicalNote = UIClinicalNote;

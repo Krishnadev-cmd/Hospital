@@ -19,7 +19,7 @@ import {
 } from './types';
 import { FHIRClient, FHIRResponse } from './client';
 
-// Transformed data types for the UI (similar to Supabase interfaces)
+// Transformed data types for the UI (FHIR-compatible interfaces)
 export interface UIPatient {
   id: string;
   first_name: string;

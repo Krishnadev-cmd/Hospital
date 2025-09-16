@@ -5,17 +5,17 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { X, User, Phone, Mail, MapPin, Shield, Calendar } from 'lucide-react';
-import { patientService, SupabasePatient } from '../../lib/services/fhir';
+import { patientService, UIPatient } from '../../lib/services/fhir';
 
 interface PatientFormProps {
   onClose: () => void;
-  onPatientCreated: (patient: SupabasePatient) => void;
-  initialData?: Partial<SupabasePatient>;
+  onPatientCreated: (patient: UIPatient) => void;
+  initialData?: Partial<UIPatient>;
   mode?: 'create' | 'edit';
 }
 
 export default function PatientForm({ onClose, onPatientCreated, initialData, mode = 'create' }: PatientFormProps) {
-  const [formData, setFormData] = useState<Partial<SupabasePatient>>({
+  const [formData, setFormData] = useState<Partial<UIPatient>>({
     first_name: '',
     last_name: '',
     middle_name: '',
@@ -40,7 +40,7 @@ export default function PatientForm({ onClose, onPatientCreated, initialData, mo
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleInputChange = (field: keyof SupabasePatient, value: string) => {
+  const handleInputChange = (field: keyof UIPatient, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
     if (errors[field]) {
