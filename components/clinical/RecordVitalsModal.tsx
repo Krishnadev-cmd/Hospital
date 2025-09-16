@@ -1,81 +1,53 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { Activity, X } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Card, CardContent } from '../ui/card';
-import { Heart, Thermometer, Activity, Weight, X, User, Calendar } from 'lucide-react';
-import { vitalSignsService, patientService, SupabasePatient, SupabaseVitalSign } from '../../lib/services/supabase';
+import { clinicalService } from '../../lib/services/fhir';
 
 interface RecordVitalsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onVitalsRecorded: () => void;
-  selectedPatient?: SupabasePatient;
+  patient: { id: string; first_name: string; last_name: string };
 }
 
 interface VitalForm {
   patient_id: string;
-  appointment_id?: string;
-  vital_type: 'blood_pressure' | 'heart_rate' | 'temperature' | 'respiratory_rate' | 'oxygen_saturation' | 'weight' | 'height' | 'bmi' | 'pain_level' | 'glucose' | 'other';
-  value: string;
-  unit: string;
-  systolic?: string;
-  diastolic?: string;
+  recorded_by: string;
+  recorded_date: string;
+  temperature?: string;
+  temperature_unit: string;
+  blood_pressure_systolic?: string;
+  blood_pressure_diastolic?: string;
+  heart_rate?: string;
+  respiratory_rate?: string;
+  oxygen_saturation?: string;
+  weight?: string;
+  weight_unit: string;
+  height?: string;
+  height_unit: string;
   notes: string;
 }
-
-const vitalTypes = [
-  { value: 'blood_pressure', label: 'Blood Pressure', unit: 'mmHg', icon: Heart, color: 'text-red-500' },
-  { value: 'heart_rate', label: 'Heart Rate', unit: 'bpm', icon: Heart, color: 'text-red-500' },
-  { value: 'temperature', label: 'Temperature', unit: '°F', icon: Thermometer, color: 'text-orange-500' },
-  { value: 'respiratory_rate', label: 'Respiratory Rate', unit: 'breaths/min', icon: Activity, color: 'text-blue-500' },
-  { value: 'oxygen_saturation', label: 'Oxygen Saturation', unit: '%', icon: Activity, color: 'text-blue-500' },
-  { value: 'weight', label: 'Weight', unit: 'lbs', icon: Weight, color: 'text-green-500' },
-  { value: 'height', label: 'Height', unit: 'inches', icon: Weight, color: 'text-green-500' },
-  { value: 'pain_level', label: 'Pain Level', unit: '/10', icon: Activity, color: 'text-yellow-500' },
-  { value: 'glucose', label: 'Blood Glucose', unit: 'mg/dL', icon: Activity, color: 'text-purple-500' },
-];
 
 export default function RecordVitalsModal({ 
   isOpen, 
   onClose, 
   onVitalsRecorded,
-  selectedPatient 
+  patient 
 }: RecordVitalsModalProps) {
-  const [patients, setPatients] = useState<SupabasePatient[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [vitals, setVitals] = useState<VitalForm[]>([
-    {
-      patient_id: selectedPatient?.id || '',
-      vital_type: 'blood_pressure',
-      value: '',
-      unit: 'mmHg',
-      systolic: '',
-      diastolic: '',
-      notes: ''
-    }
-  ]);
-
-  useEffect(() => {
-    if (isOpen) {
-      loadPatients();
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (selectedPatient) {
-      setVitals(prev => prev.map(vital => ({ ...vital, patient_id: selectedPatient.id })));
-    }
-  }, [selectedPatient]);
-
-  const loadPatients = async () => {
-    const result = await patientService.getPatients();
-    if (result.success && result.data) {
-      setPatients(result.data);
-    }
-  };
+  const [formData, setFormData] = useState<VitalForm>({
+    patient_id: patient?.id || '',
+    recorded_by: 'Dr. Default Practitioner',
+    recorded_date: new Date().toISOString(),
+    temperature_unit: 'C',
+    weight_unit: 'kg',
+    height_unit: 'cm',
+    notes: ''
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,38 +55,27 @@ export default function RecordVitalsModal({
     setError('');
 
     try {
-      // Record each vital sign
-      const promises = vitals.map(async (vital) => {
-        if (!vital.value && (!vital.systolic || !vital.diastolic)) return null;
+      // Convert strings to numbers for the API
+      const vitalData = {
+        ...formData,
+        temperature: formData.temperature ? parseFloat(formData.temperature) : undefined,
+        blood_pressure_systolic: formData.blood_pressure_systolic ? parseInt(formData.blood_pressure_systolic) : undefined,
+        blood_pressure_diastolic: formData.blood_pressure_diastolic ? parseInt(formData.blood_pressure_diastolic) : undefined,
+        heart_rate: formData.heart_rate ? parseInt(formData.heart_rate) : undefined,
+        respiratory_rate: formData.respiratory_rate ? parseInt(formData.respiratory_rate) : undefined,
+        oxygen_saturation: formData.oxygen_saturation ? parseInt(formData.oxygen_saturation) : undefined,
+        weight: formData.weight ? parseFloat(formData.weight) : undefined,
+        height: formData.height ? parseFloat(formData.height) : undefined
+      };
 
-        const vitalData: Partial<SupabaseVitalSign> = {
-          patient_id: vital.patient_id,
-          vital_type: vital.vital_type,
-          value: parseFloat(vital.value) || 0,
-          unit: vital.unit,
-          notes: vital.notes,
-          recorded_by: 'current-user-id', // TODO: Get from auth context
-        };
+      const result = await clinicalService.recordVitalSigns(vitalData);
 
-        if (vital.vital_type === 'blood_pressure') {
-          vitalData.systolic = vital.systolic ? parseInt(vital.systolic) : undefined;
-          vitalData.diastolic = vital.diastolic ? parseInt(vital.diastolic) : undefined;
-          vitalData.value = vitalData.systolic || 0;
-        }
-
-        return vitalSignsService.createVitalSign(vitalData);
-      });
-
-      const results = await Promise.all(promises);
-      const failedResults = results.filter(r => r && !r.success);
-
-      if (failedResults.length > 0) {
-        setError('Some vital signs failed to record');
-      } else {
-        alert('Vital signs recorded successfully!');
+      if (result.success) {
         onVitalsRecorded();
         onClose();
         resetForm();
+      } else {
+        setError(result.error || 'Failed to record vital signs');
       }
     } catch (err) {
       setError('An unexpected error occurred');
@@ -124,74 +85,46 @@ export default function RecordVitalsModal({
   };
 
   const resetForm = () => {
-    setVitals([{
-      patient_id: selectedPatient?.id || '',
-      vital_type: 'blood_pressure',
-      value: '',
-      unit: 'mmHg',
-      systolic: '',
-      diastolic: '',
+    setFormData({
+      patient_id: patient?.id || '',
+      recorded_by: 'Dr. Default Practitioner',
+      recorded_date: new Date().toISOString(),
+      temperature_unit: 'C',
+      weight_unit: 'kg',
+      height_unit: 'cm',
       notes: ''
-    }]);
+    });
     setError('');
   };
 
-  const addVital = () => {
-    setVitals(prev => [...prev, {
-      patient_id: vitals[0]?.patient_id || '',
-      vital_type: 'heart_rate',
-      value: '',
-      unit: 'bpm',
-      notes: ''
-    }]);
+  const handleInputChange = (field: keyof VitalForm, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
-
-  const removeVital = (index: number) => {
-    if (vitals.length > 1) {
-      setVitals(prev => prev.filter((_, i) => i !== index));
-    }
-  };
-
-  const updateVital = (index: number, field: keyof VitalForm, value: string) => {
-    setVitals(prev => prev.map((vital, i) => {
-      if (i === index) {
-        const updated = { ...vital, [field]: value };
-        
-        // Update unit when vital type changes
-        if (field === 'vital_type') {
-          const vitalType = vitalTypes.find(vt => vt.value === value);
-          if (vitalType) {
-            updated.unit = vitalType.unit;
-          }
-        }
-        
-        return updated;
-      }
-      return vital;
-    }));
-  };
-
-  const selectedPatientData = patients.find(p => p.id === vitals[0]?.patient_id);
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl max-h-[90vh] overflow-y-auto w-full mx-4">
-        <div className="p-6">
-          {/* Header */}
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center gap-2">
-              <Activity className="h-5 w-5" />
-              <h2 className="text-xl font-semibold">Record Vital Signs</h2>
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onClick={onClose}></div>
+        
+        <div className="inline-block w-full max-w-2xl p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center">
+              <Activity className="h-6 w-6 text-blue-600 mr-3" />
+              <div>
+                <h3 className="text-lg font-medium text-gray-900">Record Vital Signs</h3>
+                <p className="text-sm text-gray-600">
+                  Patient: {patient.first_name} {patient.last_name}
+                </p>
+              </div>
             </div>
-            <Button
-              variant="outline"
+            <button
               onClick={onClose}
-              className="p-2"
+              className="rounded-md text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <X className="h-4 w-4" />
-            </Button>
+              <X className="h-6 w-6" />
+            </button>
           </div>
 
           {error && (
@@ -200,186 +133,167 @@ export default function RecordVitalsModal({
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Patient Selection */}
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <User className="h-4 w-4" />
-                  <label className="text-sm font-medium">Patient Information</label>
-                </div>
-                
-                <div>
-                  <label htmlFor="patient_id" className="block text-sm font-medium text-gray-700 mb-1">
-                    Select Patient *
-                  </label>
-                  <select 
-                    id="patient_id"
-                    value={vitals[0]?.patient_id || ''} 
-                    onChange={(e) => {
-                      const patientId = e.target.value;
-                      setVitals(prev => prev.map(vital => ({ ...vital, patient_id: patientId })));
-                    }}
-                    required
-                    className="w-full p-2 border border-gray-300 rounded-md"
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Temperature
+                </label>
+                <div className="flex">
+                  <Input
+                    type="number"
+                    step="0.1"
+                    value={formData.temperature || ''}
+                    onChange={(e) => handleInputChange('temperature', e.target.value)}
+                    placeholder="36.5"
+                    className="flex-1"
+                  />
+                  <select
+                    value={formData.temperature_unit}
+                    onChange={(e) => handleInputChange('temperature_unit', e.target.value)}
+                    className="ml-2 p-2 border border-gray-300 rounded-md"
                   >
-                    <option value="">Choose a patient</option>
-                    {patients.map((patient) => (
-                      <option key={patient.id} value={patient.id}>
-                        {patient.first_name} {patient.last_name} - MRN: {patient.mrn}
-                      </option>
-                    ))}
+                    <option value="C">°C</option>
+                    <option value="F">°F</option>
                   </select>
-
-                  {selectedPatientData && (
-                    <div className="mt-2 p-3 bg-blue-50 rounded-lg">
-                      <p className="text-sm">
-                        <strong>Patient:</strong> {selectedPatientData.first_name} {selectedPatientData.last_name}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        DOB: {new Date(selectedPatientData.date_of_birth).toLocaleDateString()} | 
-                        Phone: {selectedPatientData.phone || 'N/A'}
-                      </p>
-                    </div>
-                  )}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
 
-            {/* Vital Signs */}
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex justify-between items-center mb-4">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    <label className="text-sm font-medium">Vital Signs</label>
-                  </div>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={addVital}
-                    className="text-sm"
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Heart Rate (bpm)
+                </label>
+                <Input
+                  type="number"
+                  value={formData.heart_rate || ''}
+                  onChange={(e) => handleInputChange('heart_rate', e.target.value)}
+                  placeholder="72"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Systolic BP (mmHg)
+                </label>
+                <Input
+                  type="number"
+                  value={formData.blood_pressure_systolic || ''}
+                  onChange={(e) => handleInputChange('blood_pressure_systolic', e.target.value)}
+                  placeholder="120"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Diastolic BP (mmHg)
+                </label>
+                <Input
+                  type="number"
+                  value={formData.blood_pressure_diastolic || ''}
+                  onChange={(e) => handleInputChange('blood_pressure_diastolic', e.target.value)}
+                  placeholder="80"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Respiratory Rate (/min)
+                </label>
+                <Input
+                  type="number"
+                  value={formData.respiratory_rate || ''}
+                  onChange={(e) => handleInputChange('respiratory_rate', e.target.value)}
+                  placeholder="16"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Oxygen Saturation (%)
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={formData.oxygen_saturation || ''}
+                  onChange={(e) => handleInputChange('oxygen_saturation', e.target.value)}
+                  placeholder="98"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Weight
+                </label>
+                <div className="flex">
+                  <Input
+                    type="number"
+                    step="0.1"
+                    value={formData.weight || ''}
+                    onChange={(e) => handleInputChange('weight', e.target.value)}
+                    placeholder="70"
+                    className="flex-1"
+                  />
+                  <select
+                    value={formData.weight_unit}
+                    onChange={(e) => handleInputChange('weight_unit', e.target.value)}
+                    className="ml-2 p-2 border border-gray-300 rounded-md"
                   >
-                    Add Another Vital
-                  </Button>
+                    <option value="kg">kg</option>
+                    <option value="lbs">lbs</option>
+                  </select>
                 </div>
+              </div>
 
-                <div className="space-y-4">
-                  {vitals.map((vital, index) => {
-                    const vitalTypeConfig = vitalTypes.find(vt => vt.value === vital.vital_type);
-                    const VitalIcon = vitalTypeConfig?.icon || Activity;
-
-                    return (
-                      <div key={index} className="border rounded-lg p-4 space-y-4">
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-2">
-                            <VitalIcon className={`h-4 w-4 ${vitalTypeConfig?.color || 'text-gray-500'}`} />
-                            <span className="font-medium">Vital Sign {index + 1}</span>
-                          </div>
-                          {vitals.length > 1 && (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => removeVital(index)}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              Remove
-                            </Button>
-                          )}
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Vital Type *
-                            </label>
-                            <select
-                              value={vital.vital_type}
-                              onChange={(e) => updateVital(index, 'vital_type', e.target.value)}
-                              required
-                              className="w-full p-2 border border-gray-300 rounded-md"
-                            >
-                              {vitalTypes.map((type) => (
-                                <option key={type.value} value={type.value}>
-                                  {type.label}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          {vital.vital_type === 'blood_pressure' ? (
-                            <>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                  Systolic *
-                                </label>
-                                <Input
-                                  type="number"
-                                  value={vital.systolic}
-                                  onChange={(e) => updateVital(index, 'systolic', e.target.value)}
-                                  placeholder="120"
-                                  required
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                  Diastolic *
-                                </label>
-                                <Input
-                                  type="number"
-                                  value={vital.diastolic}
-                                  onChange={(e) => updateVital(index, 'diastolic', e.target.value)}
-                                  placeholder="80"
-                                  required
-                                />
-                              </div>
-                            </>
-                          ) : (
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Value * ({vital.unit})
-                              </label>
-                              <Input
-                                type="number"
-                                step="0.1"
-                                value={vital.value}
-                                onChange={(e) => updateVital(index, 'value', e.target.value)}
-                                placeholder="Enter value"
-                                required
-                              />
-                            </div>
-                          )}
-
-                          <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Notes
-                            </label>
-                            <textarea
-                              value={vital.notes}
-                              onChange={(e) => updateVital(index, 'notes', e.target.value)}
-                              placeholder="Additional notes or observations"
-                              rows={2}
-                              className="w-full p-2 border border-gray-300 rounded-md"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Height
+                </label>
+                <div className="flex">
+                  <Input
+                    type="number"
+                    step="0.1"
+                    value={formData.height || ''}
+                    onChange={(e) => handleInputChange('height', e.target.value)}
+                    placeholder="170"
+                    className="flex-1"
+                  />
+                  <select
+                    value={formData.height_unit}
+                    onChange={(e) => handleInputChange('height_unit', e.target.value)}
+                    className="ml-2 p-2 border border-gray-300 rounded-md"
+                  >
+                    <option value="cm">cm</option>
+                    <option value="in">in</option>
+                  </select>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
-            {/* Actions */}
-            <div className="flex justify-end space-x-3 pt-4 border-t">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Notes
+              </label>
+              <textarea
+                value={formData.notes}
+                onChange={(e) => handleInputChange('notes', e.target.value)}
+                rows={3}
+                className="w-full p-2 border border-gray-300 rounded-md resize-none"
+                placeholder="Additional notes about the vital signs..."
+              />
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-4">
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => {
-                  onClose();
-                  resetForm();
-                }}
+                onClick={onClose}
                 disabled={loading}
               >
                 Cancel
@@ -387,9 +301,19 @@ export default function RecordVitalsModal({
               <Button
                 type="submit"
                 disabled={loading}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="flex items-center"
               >
-                {loading ? 'Recording...' : 'Record Vitals'}
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Recording...
+                  </>
+                ) : (
+                  <>
+                    <Activity className="h-4 w-4 mr-2" />
+                    Record Vitals
+                  </>
+                )}
               </Button>
             </div>
           </form>

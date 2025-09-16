@@ -18,7 +18,7 @@ import AppointmentList from '../../components/appointments/AppointmentList';
 import ClinicalOperations from '@/components/clinical/ClinicalOperations';
 import BillingOperations from '../../components/billing/BillingOperations';
 import Reports from '../../components/reports/Reports';
-import { patientService, appointmentService, SupabasePatient } from '../../lib/services/supabase';
+import { patientService, appointmentService, SupabasePatient } from '../../lib/services/fhir';
 
 export default function Dashboard() {
   const [activeSection, setActiveSection] = useState('overview');
@@ -67,6 +67,7 @@ export default function Dashboard() {
     { id: 'clinical', name: 'Clinical', icon: Stethoscope, badge: stats.pendingLabs },
     { id: 'billing', name: 'Billing', icon: CreditCard, badge: null },
     { id: 'reports', name: 'Reports', icon: FileText, badge: null },
+    { id: 'configuration', name: 'Configuration', icon: Activity, badge: null },
   ];
 
   const statsCards = [
@@ -221,11 +222,33 @@ export default function Dashboard() {
           />
         );
       case 'clinical':
-        return <ClinicalOperations />;
+        return <ClinicalOperations selectedPatient={selectedPatient} />;
       case 'billing':
         return <BillingOperations />;
       case 'reports':
         return <Reports />;
+      case 'configuration':
+        return (
+          <div>
+            <div className="mb-6">
+              <h1 className="text-3xl font-bold text-gray-900">FHIR Configuration</h1>
+              <p className="text-gray-600 mt-2">
+                Configure your FHIR server connection and test the integration
+              </p>
+            </div>
+            <div className="bg-white rounded-lg p-6">
+              <p className="text-gray-600 mb-4">
+                Please visit the dedicated configuration page for full FHIR setup.
+              </p>
+              <Button 
+                onClick={() => window.open('/dashboard/configuration', '_blank')}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                Open Configuration Page
+              </Button>
+            </div>
+          </div>
+        );
       default:
         return renderOverview();
     }

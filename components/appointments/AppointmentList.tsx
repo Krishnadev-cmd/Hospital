@@ -1,15 +1,17 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, User, Phone, MapPin, AlertCircle, Loader2, Plus, Filter, Search } from 'lucide-react';
+import { Calendar, Clock, User, Phone, MapPin, AlertCircle, Loader2, Plus, Search, Edit, RotateCcw, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { appointmentService, SupabaseAppointment } from '../../lib/services/supabase';
+import { appointmentService, UIAppointment } from '../../lib/services/fhir';
 import ScheduleAppointmentModal from './ScheduleAppointmentModal';
+import EditAppointmentModal from '@/components/appointments/EditAppointmentModal';
+import RescheduleAppointmentModal from '@/components/appointments/RescheduleAppointmentModal';
 
 interface AppointmentListProps {
-  onAppointmentSelect?: (appointment: SupabaseAppointment) => void;
+  onAppointmentSelect?: (appointment: UIAppointment) => void;
 }
 
 export default function AppointmentList({ onAppointmentSelect }: AppointmentListProps) {
@@ -20,6 +22,9 @@ export default function AppointmentList({ onAppointmentSelect }: AppointmentList
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [appointmentToEdit, setAppointmentToEdit] = useState<any>(null);
 
   const loadAppointments = async (date?: string, searchText?: string) => {
     try {
@@ -72,6 +77,45 @@ export default function AppointmentList({ onAppointmentSelect }: AppointmentList
   };
 
   const handleAppointmentScheduled = () => {
+    loadAppointments(selectedDate, searchTerm);
+  };
+
+  const handleEditAppointment = (appointment: any) => {
+    setAppointmentToEdit(appointment);
+    setShowEditModal(true);
+  };
+
+  const handleRescheduleAppointment = (appointment: any) => {
+    setAppointmentToEdit(appointment);
+    setShowRescheduleModal(true);
+  };
+
+  const handleCancelAppointment = async (appointment: any) => {
+    const reason = prompt('Please provide a reason for cancellation (optional):');
+    
+    if (confirm('Are you sure you want to cancel this appointment?')) {
+      try {
+        setLoading(true);
+        const result = await appointmentService.cancelAppointment(appointment.id, reason || undefined);
+        
+        if (result.success) {
+          alert('Appointment cancelled successfully');
+          loadAppointments(selectedDate, searchTerm);
+        } else {
+          alert(`Failed to cancel appointment: ${result.error}`);
+        }
+      } catch (error) {
+        alert('Failed to cancel appointment');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const handleAppointmentUpdated = () => {
+    setShowEditModal(false);
+    setShowRescheduleModal(false);
+    setAppointmentToEdit(null);
     loadAppointments(selectedDate, searchTerm);
   };
 
@@ -177,15 +221,9 @@ export default function AppointmentList({ onAppointmentSelect }: AppointmentList
       {/* Appointments List */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span className="flex items-center">
-              <Calendar className="h-5 w-5 mr-2" />
-              Appointments for {new Date(selectedDate).toLocaleDateString()}
-            </span>
-            <Button variant="outline" size="sm">
-              <Filter className="h-4 w-4 mr-2" />
-              Filters
-            </Button>
+          <CardTitle className="flex items-center">
+            <Calendar className="h-5 w-5 mr-2" />
+            Appointments for {new Date(selectedDate).toLocaleDateString()}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -247,11 +285,39 @@ export default function AppointmentList({ onAppointmentSelect }: AppointmentList
                     </div>
                     
                     <div className="flex items-center space-x-2">
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditAppointment(appointment);
+                        }}
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
                         Edit
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRescheduleAppointment(appointment);
+                        }}
+                      >
+                        <RotateCcw className="h-4 w-4 mr-1" />
                         Reschedule
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCancelAppointment(appointment);
+                        }}
+                      >
+                        <X className="h-4 w-4 mr-1" />
+                        Cancel
                       </Button>
                     </div>
                   </div>
@@ -304,6 +370,26 @@ export default function AppointmentList({ onAppointmentSelect }: AppointmentList
         onClose={() => setShowScheduleModal(false)}
         onAppointmentScheduled={handleAppointmentScheduled}
       />
+
+      {/* Edit Appointment Modal */}
+      {appointmentToEdit && (
+        <EditAppointmentModal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          appointment={appointmentToEdit}
+          onAppointmentUpdated={handleAppointmentUpdated}
+        />
+      )}
+
+      {/* Reschedule Appointment Modal */}
+      {appointmentToEdit && (
+        <RescheduleAppointmentModal
+          isOpen={showRescheduleModal}
+          onClose={() => setShowRescheduleModal(false)}
+          appointment={appointmentToEdit}
+          onAppointmentRescheduled={handleAppointmentUpdated}
+        />
+      )}
     </div>
   );
 }

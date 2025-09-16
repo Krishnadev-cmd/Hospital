@@ -5,7 +5,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { X, User, Phone, Mail, MapPin, Shield, Calendar } from 'lucide-react';
-import { patientService, SupabasePatient } from '../../lib/services/supabase';
+import { patientService, SupabasePatient } from '../../lib/services/fhir';
 
 interface PatientFormProps {
   onClose: () => void;

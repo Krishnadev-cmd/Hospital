@@ -5,13 +5,13 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Card, CardContent } from '../ui/card';
 import { Calendar, Clock, User, FileText, X } from 'lucide-react';
-import { appointmentService, patientService, practitionerService, SupabasePatient, SupabasePractitioner } from '../../lib/services/supabase';
+import { appointmentService, patientService, UIPatient } from '../../lib/services/fhir';
 
 interface ScheduleAppointmentModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAppointmentScheduled: () => void;
-  selectedPatient?: SupabasePatient;
+  selectedPatient?: UIPatient;
 }
 
 interface AppointmentForm {
@@ -49,13 +49,12 @@ export default function ScheduleAppointmentModal({
   onAppointmentScheduled,
   selectedPatient 
 }: ScheduleAppointmentModalProps) {
-  const [patients, setPatients] = useState<SupabasePatient[]>([]);
-  const [practitioners, setPractitioners] = useState<SupabasePractitioner[]>([]);
+  const [patients, setPatients] = useState<UIPatient[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState<AppointmentForm>({
     patient_id: selectedPatient?.id || '',
-    practitioner_id: '',
+    practitioner_id: 'default-practitioner',
     appointment_date: '',
     appointment_time: '',
     duration_minutes: 30,
@@ -67,7 +66,6 @@ export default function ScheduleAppointmentModal({
   useEffect(() => {
     if (isOpen) {
       loadPatients();
-      loadPractitioners();
       // Set today as default date
       const today = new Date().toISOString().split('T')[0];
       setFormData(prev => ({ ...prev, appointment_date: today }));
@@ -84,32 +82,6 @@ export default function ScheduleAppointmentModal({
     const result = await patientService.getPatients();
     if (result.success && result.data) {
       setPatients(result.data);
-    }
-  };
-
-  const loadPractitioners = async () => {
-    try {
-      const result = await practitionerService.getPractitioners();
-      if (result.success && result.data && result.data.length > 0) {
-        setPractitioners(result.data);
-      } else {
-        // No practitioners found, initialize default ones
-        console.log('No practitioners found, creating default practitioners...');
-        const initResult = await practitionerService.initializeDefaultPractitioners();
-        if (initResult.success && initResult.data) {
-          setPractitioners(initResult.data);
-          console.log('Default practitioners created successfully');
-        } else {
-          console.error('Failed to initialize practitioners:', initResult.error);
-          setPractitioners([]);
-          setError('No practitioners found and failed to create default practitioners');
-        }
-      }
-    } catch (error) {
-      console.error('Error loading practitioners:', error);
-      // Set empty array as fallback
-      setPractitioners([]);
-      setError('Error loading practitioners. Please check database connection.');
     }
   };
 
@@ -142,7 +114,7 @@ export default function ScheduleAppointmentModal({
   const resetForm = () => {
     setFormData({
       patient_id: selectedPatient?.id || '',
-      practitioner_id: '',
+      practitioner_id: 'default-practitioner',
       appointment_date: '',
       appointment_time: '',
       duration_minutes: 30,
@@ -251,12 +223,7 @@ export default function ScheduleAppointmentModal({
                       required
                       className="w-full p-2 border border-gray-300 rounded-md"
                     >
-                      <option value="">Select practitioner</option>
-                      {practitioners.map((practitioner) => (
-                        <option key={practitioner.id} value={practitioner.id}>
-                          Dr. {practitioner.first_name} {practitioner.last_name} - {practitioner.specialty || 'General'}
-                        </option>
-                      ))}
+                      <option value="default-practitioner">Dr. Default Practitioner - General</option>
                     </select>
                   </div>
 

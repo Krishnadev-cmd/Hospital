@@ -150,6 +150,116 @@ export interface SupabasePractitioner {
   updated_by?: string;
 }
 
+// New interfaces for enhanced functionality
+export interface SupabasePatientMedicalHistory {
+  id: string;
+  patient_id: string;
+  condition_name: string;
+  diagnosis_date?: string;
+  status: 'active' | 'resolved' | 'chronic';
+  notes?: string;
+  created_at: string;
+  created_by?: string;
+}
+
+export interface SupabasePatientAllergy {
+  id: string;
+  patient_id: string;
+  allergen: string;
+  reaction?: string;
+  severity: 'mild' | 'moderate' | 'severe';
+  status: 'active' | 'inactive';
+  created_at: string;
+  created_by?: string;
+}
+
+export interface SupabasePatientImmunization {
+  id: string;
+  patient_id: string;
+  vaccine_name: string;
+  vaccination_date: string;
+  lot_number?: string;
+  expiration_date?: string;
+  administered_by?: string;
+  site?: string;
+  notes?: string;
+  created_at: string;
+  created_by?: string;
+}
+
+export interface SupabaseLabResult {
+  id: string;
+  patient_id: string;
+  appointment_id?: string;
+  test_name: string;
+  test_category?: string;
+  result_value?: string;
+  reference_range?: string;
+  unit?: string;
+  status: 'pending' | 'completed' | 'cancelled';
+  abnormal_flag: boolean;
+  collected_date?: string;
+  reported_date?: string;
+  notes?: string;
+  created_at: string;
+  created_by?: string;
+}
+
+export interface SupabasePatientDiagnosis {
+  id: string;
+  patient_id: string;
+  appointment_id?: string;
+  diagnosis_code?: string;
+  diagnosis_name: string;
+  type: 'primary' | 'secondary';
+  status: 'active' | 'resolved' | 'chronic';
+  onset_date?: string;
+  resolved_date?: string;
+  notes?: string;
+  created_at: string;
+  created_by?: string;
+}
+
+export interface SupabaseProviderSchedule {
+  id: string;
+  practitioner_id: string;
+  day_of_week: number; // 0=Sunday, 1=Monday, etc.
+  start_time: string;
+  end_time: string;
+  is_available: boolean;
+  created_at: string;
+}
+
+export interface SupabasePaymentHistory {
+  id: string;
+  patient_id: string;
+  invoice_id?: string;
+  payment_date: string;
+  amount: number;
+  payment_method?: string;
+  reference_number?: string;
+  notes?: string;
+  created_at: string;
+  created_by?: string;
+}
+
+export interface SupabasePatientInsurance {
+  id: string;
+  patient_id: string;
+  insurance_provider: string;
+  policy_number?: string;
+  group_number?: string;
+  subscriber_name?: string;
+  relationship: string;
+  effective_date?: string;
+  expiration_date?: string;
+  copay_amount?: number;
+  deductible_amount?: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export class SupabasePatientService {
   
   /**
@@ -407,6 +517,207 @@ export class SupabasePatientService {
       };
     }
   }
+
+  /**
+   * Get patient medical history
+   */
+  async getPatientMedicalHistory(patientId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('patient_medical_history')
+        .select('*')
+        .eq('patient_id', patientId)
+        .order('diagnosis_date', { ascending: false });
+
+      if (error) throw error;
+
+      return { success: true, data: data || [] };
+    } catch (error) {
+      console.error('Error fetching medical history:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch medical history'
+      };
+    }
+  }
+
+  /**
+   * Add medical history record
+   */
+  async addMedicalHistory(historyData: Partial<SupabasePatientMedicalHistory>) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      const { data, error } = await supabase
+        .from('patient_medical_history')
+        .insert([{
+          ...historyData,
+          created_by: user?.id
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error adding medical history:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to add medical history'
+      };
+    }
+  }
+
+  /**
+   * Get patient allergies
+   */
+  async getPatientAllergies(patientId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('patient_allergies')
+        .select('*')
+        .eq('patient_id', patientId)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return { success: true, data: data || [] };
+    } catch (error) {
+      console.error('Error fetching allergies:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch allergies'
+      };
+    }
+  }
+
+  /**
+   * Add patient allergy
+   */
+  async addPatientAllergy(allergyData: Partial<SupabasePatientAllergy>) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      const { data, error } = await supabase
+        .from('patient_allergies')
+        .insert([{
+          ...allergyData,
+          created_by: user?.id
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error adding allergy:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to add allergy'
+      };
+    }
+  }
+
+  /**
+   * Get patient immunizations
+   */
+  async getPatientImmunizations(patientId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('patient_immunizations')
+        .select('*')
+        .eq('patient_id', patientId)
+        .order('vaccination_date', { ascending: false });
+
+      if (error) throw error;
+
+      return { success: true, data: data || [] };
+    } catch (error) {
+      console.error('Error fetching immunizations:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch immunizations'
+      };
+    }
+  }
+
+  /**
+   * Add patient immunization
+   */
+  async addPatientImmunization(immunizationData: Partial<SupabasePatientImmunization>) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      const { data, error } = await supabase
+        .from('patient_immunizations')
+        .insert([{
+          ...immunizationData,
+          created_by: user?.id
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error adding immunization:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to add immunization'
+      };
+    }
+  }
+
+  /**
+   * Get patient insurance information
+   */
+  async getPatientInsurance(patientId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('patient_insurance')
+        .select('*')
+        .eq('patient_id', patientId)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return { success: true, data: data || [] };
+    } catch (error) {
+      console.error('Error fetching insurance information:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch insurance information'
+      };
+    }
+  }
+
+  /**
+   * Add patient insurance
+   */
+  async addPatientInsurance(insuranceData: Partial<SupabasePatientInsurance>) {
+    try {
+      const { data, error } = await supabase
+        .from('patient_insurance')
+        .insert([insuranceData])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error adding insurance:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to add insurance'
+      };
+    }
+  }
 }
 
 export class SupabaseAppointmentService {
@@ -618,6 +929,379 @@ export class SupabaseAppointmentService {
       };
     }
   }
+
+  /**
+   * Check provider availability for a specific date and time
+   */
+  async checkProviderAvailability(practitionerId: string, appointmentDate: string, appointmentTime: string, duration: number = 30) {
+    try {
+      // Check if practitioner has schedule for this day
+      const appointmentDateTime = new Date(`${appointmentDate}T${appointmentTime}`);
+      const dayOfWeek = appointmentDateTime.getDay();
+
+      const { data: schedules, error: scheduleError } = await supabase
+        .from('provider_schedules')
+        .select('*')
+        .eq('practitioner_id', practitionerId)
+        .eq('day_of_week', dayOfWeek)
+        .eq('is_available', true);
+
+      if (scheduleError) throw scheduleError;
+
+      if (!schedules || schedules.length === 0) {
+        return {
+          success: false,
+          available: false,
+          message: 'Provider not available on this day'
+        };
+      }
+
+      // Check if requested time falls within provider's schedule
+      const requestedTime = appointmentTime;
+      const endTime = new Date(appointmentDateTime.getTime() + duration * 60000);
+      const endTimeString = endTime.toTimeString().slice(0, 5);
+
+      const isWithinSchedule = schedules.some(schedule => 
+        requestedTime >= schedule.start_time && endTimeString <= schedule.end_time
+      );
+
+      if (!isWithinSchedule) {
+        return {
+          success: false,
+          available: false,
+          message: 'Requested time is outside provider schedule'
+        };
+      }
+
+      // Check for conflicting appointments
+      const { data: conflicts, error: conflictError } = await supabase
+        .from('appointments')
+        .select('*')
+        .eq('practitioner_id', practitionerId)
+        .eq('appointment_date', appointmentDate)
+        .in('status', ['scheduled', 'confirmed', 'in-progress']);
+
+      if (conflictError) throw conflictError;
+
+      if (conflicts && conflicts.length > 0) {
+        for (const appointment of conflicts) {
+          const existingStart = new Date(`${appointmentDate}T${appointment.appointment_time}`);
+          const existingEnd = new Date(existingStart.getTime() + (appointment.duration_minutes || 30) * 60000);
+          const requestedStart = appointmentDateTime;
+          const requestedEnd = endTime;
+
+          // Check for time overlap
+          if (requestedStart < existingEnd && requestedEnd > existingStart) {
+            return {
+              success: false,
+              available: false,
+              message: 'Time slot conflicts with existing appointment'
+            };
+          }
+        }
+      }
+
+      return {
+        success: true,
+        available: true,
+        message: 'Time slot is available'
+      };
+    } catch (error) {
+      console.error('Error checking availability:', error);
+      return {
+        success: false,
+        available: false,
+        error: error instanceof Error ? error.message : 'Failed to check availability'
+      };
+    }
+  }
+
+  /**
+   * Get available time slots for a provider on a specific date
+   */
+  async getAvailableTimeSlots(practitionerId: string, appointmentDate: string) {
+    try {
+      const appointmentDateTime = new Date(appointmentDate);
+      const dayOfWeek = appointmentDateTime.getDay();
+
+      // Get provider schedule for this day
+      const { data: schedules, error: scheduleError } = await supabase
+        .from('provider_schedules')
+        .select('*')
+        .eq('practitioner_id', practitionerId)
+        .eq('day_of_week', dayOfWeek)
+        .eq('is_available', true);
+
+      if (scheduleError) throw scheduleError;
+
+      if (!schedules || schedules.length === 0) {
+        return {
+          success: true,
+          data: [],
+          message: 'Provider not available on this day'
+        };
+      }
+
+      // Get existing appointments for this date
+      const { data: appointments, error: appointmentError } = await supabase
+        .from('appointments')
+        .select('appointment_time, duration_minutes')
+        .eq('practitioner_id', practitionerId)
+        .eq('appointment_date', appointmentDate)
+        .in('status', ['scheduled', 'confirmed', 'in-progress']);
+
+      if (appointmentError) throw appointmentError;
+
+      // Generate available time slots
+      const availableSlots: string[] = [];
+      const slotDuration = 30; // 30-minute slots
+
+      for (const schedule of schedules) {
+        let currentTime = new Date(`2000-01-01T${schedule.start_time}`);
+        const endTime = new Date(`2000-01-01T${schedule.end_time}`);
+
+        while (currentTime < endTime) {
+          const timeString = currentTime.toTimeString().slice(0, 5);
+          const slotEnd = new Date(currentTime.getTime() + slotDuration * 60000);
+
+          // Check if this slot conflicts with existing appointments
+          const hasConflict = appointments?.some(apt => {
+            const aptStart = new Date(`2000-01-01T${apt.appointment_time}`);
+            const aptEnd = new Date(aptStart.getTime() + (apt.duration_minutes || 30) * 60000);
+            return currentTime < aptEnd && slotEnd > aptStart;
+          });
+
+          if (!hasConflict) {
+            availableSlots.push(timeString);
+          }
+
+          currentTime = new Date(currentTime.getTime() + slotDuration * 60000);
+        }
+      }
+
+      return {
+        success: true,
+        data: availableSlots
+      };
+    } catch (error) {
+      console.error('Error getting available slots:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to get available slots'
+      };
+    }
+  }
+
+  /**
+   * Edit appointment details
+   */
+  async editAppointment(id: string, updates: Partial<SupabaseAppointment>) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // If updating appointment time/date, check availability
+      if (updates.appointment_date || updates.appointment_time) {
+        const { data: currentAppointment } = await supabase
+          .from('appointments')
+          .select('practitioner_id, appointment_date, appointment_time, duration_minutes')
+          .eq('id', id)
+          .single();
+
+        if (currentAppointment) {
+          const practitionerId = updates.practitioner_id || currentAppointment.practitioner_id;
+          const appointmentDate = updates.appointment_date || currentAppointment.appointment_date;
+          const appointmentTime = updates.appointment_time || currentAppointment.appointment_time;
+          const duration = updates.duration_minutes || currentAppointment.duration_minutes || 30;
+
+          // Check availability for the new time slot (excluding current appointment)
+          const availabilityCheck = await this.checkProviderAvailability(
+            practitionerId, 
+            appointmentDate, 
+            appointmentTime, 
+            duration
+          );
+
+          if (!availabilityCheck.success || !availabilityCheck.available) {
+            return {
+              success: false,
+              error: availabilityCheck.error || 'The selected time slot is not available'
+            };
+          }
+        }
+      }
+
+      const { data, error } = await supabase
+        .from('appointments')
+        .update({
+          ...updates,
+          updated_by: user?.id
+        })
+        .eq('id', id)
+        .select(`
+          *,
+          patients!inner(first_name, last_name),
+          practitioners!inner(first_name, last_name)
+        `)
+        .single();
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        data
+      };
+    } catch (error) {
+      console.error('Error editing appointment:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to edit appointment'
+      };
+    }
+  }
+
+  /**
+   * Reschedule appointment to a new date and time
+   */
+  async rescheduleAppointment(
+    id: string, 
+    newDate: string, 
+    newTime: string, 
+    reason?: string
+  ) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // Get current appointment details
+      const { data: currentAppointment, error: fetchError } = await supabase
+        .from('appointments')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (fetchError) throw fetchError;
+      if (!currentAppointment) {
+        return {
+          success: false,
+          error: 'Appointment not found'
+        };
+      }
+
+      // Check availability for the new time slot
+      const availabilityCheck = await this.checkProviderAvailability(
+        currentAppointment.practitioner_id,
+        newDate,
+        newTime,
+        currentAppointment.duration_minutes || 30
+      );
+
+      if (!availabilityCheck.success || !availabilityCheck.available) {
+        return {
+          success: false,
+          error: availabilityCheck.error || 'The selected time slot is not available'
+        };
+      }
+
+      // Update the appointment with new date/time
+      const { data, error } = await supabase
+        .from('appointments')
+        .update({
+          appointment_date: newDate,
+          appointment_time: newTime,
+          status: 'scheduled', // Reset status when rescheduling
+          notes: reason ? `${currentAppointment.notes ? currentAppointment.notes + '\n' : ''}Rescheduled: ${reason}` : currentAppointment.notes,
+          updated_by: user?.id
+        })
+        .eq('id', id)
+        .select(`
+          *,
+          patients!inner(first_name, last_name),
+          practitioners!inner(first_name, last_name)
+        `)
+        .single();
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        data,
+        message: 'Appointment rescheduled successfully'
+      };
+    } catch (error) {
+      console.error('Error rescheduling appointment:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to reschedule appointment'
+      };
+    }
+  }
+
+  /**
+   * Cancel appointment
+   */
+  async cancelAppointment(id: string, reason?: string) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const { data, error } = await supabase
+        .from('appointments')
+        .update({
+          status: 'cancelled',
+          notes: reason ? `Cancelled: ${reason}` : 'Cancelled',
+          updated_by: user?.id
+        })
+        .eq('id', id)
+        .select(`
+          *,
+          patients!inner(first_name, last_name),
+          practitioners!inner(first_name, last_name)
+        `)
+        .single();
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        data,
+        message: 'Appointment cancelled successfully'
+      };
+    } catch (error) {
+      console.error('Error cancelling appointment:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to cancel appointment'
+      };
+    }
+  }
+
+  /**
+   * Get appointment by ID
+   */
+  async getAppointment(id: string) {
+    try {
+      const { data, error } = await supabase
+        .from('appointments')
+        .select(`
+          *,
+          patients!inner(first_name, last_name, phone, email),
+          practitioners!inner(first_name, last_name, title, specialty)
+        `)
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        data
+      };
+    } catch (error) {
+      console.error('Error fetching appointment:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch appointment'
+      };
+    }
+  }
 }
 
 /**
@@ -818,6 +1502,163 @@ export class SupabasePractitionerService {
 }
 
 /**
+ * Clinical Service for Lab Results and Diagnoses
+ */
+export class SupabaseClinicalService {
+  /**
+   * Get lab results for a patient
+   */
+  async getPatientLabResults(patientId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('lab_results')
+        .select('*')
+        .eq('patient_id', patientId)
+        .order('reported_date', { ascending: false });
+
+      if (error) throw error;
+
+      return { success: true, data: data || [] };
+    } catch (error) {
+      console.error('Error fetching lab results:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch lab results'
+      };
+    }
+  }
+
+  /**
+   * Add lab result
+   */
+  async addLabResult(labData: Partial<SupabaseLabResult>) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      const { data, error } = await supabase
+        .from('lab_results')
+        .insert([{
+          ...labData,
+          created_by: user?.id
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error adding lab result:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to add lab result'
+      };
+    }
+  }
+
+  /**
+   * Get patient diagnoses
+   */
+  async getPatientDiagnoses(patientId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('patient_diagnoses')
+        .select('*')
+        .eq('patient_id', patientId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return { success: true, data: data || [] };
+    } catch (error) {
+      console.error('Error fetching diagnoses:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch diagnoses'
+      };
+    }
+  }
+
+  /**
+   * Add patient diagnosis
+   */
+  async addPatientDiagnosis(diagnosisData: Partial<SupabasePatientDiagnosis>) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      const { data, error } = await supabase
+        .from('patient_diagnoses')
+        .insert([{
+          ...diagnosisData,
+          created_by: user?.id
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error adding diagnosis:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to add diagnosis'
+      };
+    }
+  }
+
+  /**
+   * Get patient complete medical record
+   */
+  async getPatientMedicalRecord(patientId: string) {
+    try {
+      const [
+        patientResult,
+        medicalHistoryResult,
+        allergiesResult,
+        immunizationsResult,
+        labResultsResult,
+        diagnosesResult,
+        vitalsResult,
+        notesResult,
+        prescriptionsResult
+      ] = await Promise.all([
+        supabase.from('patients').select('*').eq('id', patientId).single(),
+        supabase.from('patient_medical_history').select('*').eq('patient_id', patientId),
+        supabase.from('patient_allergies').select('*').eq('patient_id', patientId).eq('status', 'active'),
+        supabase.from('patient_immunizations').select('*').eq('patient_id', patientId),
+        supabase.from('lab_results').select('*').eq('patient_id', patientId),
+        supabase.from('patient_diagnoses').select('*').eq('patient_id', patientId),
+        supabase.from('vital_signs').select('*').eq('patient_id', patientId).limit(10),
+        supabase.from('clinical_notes').select('*').eq('patient_id', patientId).limit(5),
+        supabase.from('prescriptions').select('*, medications!inner(*)').eq('patient_id', patientId)
+      ]);
+
+      return {
+        success: true,
+        data: {
+          patient: patientResult.data,
+          medicalHistory: medicalHistoryResult.data || [],
+          allergies: allergiesResult.data || [],
+          immunizations: immunizationsResult.data || [],
+          labResults: labResultsResult.data || [],
+          diagnoses: diagnosesResult.data || [],
+          recentVitals: vitalsResult.data || [],
+          recentNotes: notesResult.data || [],
+          currentPrescriptions: prescriptionsResult.data || []
+        }
+      };
+    } catch (error) {
+      console.error('Error fetching complete medical record:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch medical record'
+      };
+    }
+  }
+}
+
+/**
  * Vital Signs Service
  */
 export class SupabaseVitalSignsService {
@@ -918,6 +1759,264 @@ export class SupabaseVitalSignsService {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to fetch latest vitals'
+      };
+    }
+  }
+
+  /**
+   * Record multiple vital signs in one session
+   */
+  async recordVitalsSuite(patientId: string, vitals: {
+    bloodPressure?: { systolic: number; diastolic: number; notes?: string };
+    heartRate?: { value: number; notes?: string };
+    temperature?: { value: number; unit?: 'F' | 'C'; notes?: string };
+    respiratoryRate?: { value: number; notes?: string };
+    oxygenSaturation?: { value: number; notes?: string };
+    weight?: { value: number; unit?: 'lbs' | 'kg'; notes?: string };
+    height?: { value: number; unit?: 'in' | 'cm'; notes?: string };
+    painLevel?: { value: number; notes?: string };
+  }, recordedBy: string, appointmentId?: string) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const recordedAt = new Date().toISOString();
+      const vitalRecords: Partial<SupabaseVitalSign>[] = [];
+
+      // Blood Pressure
+      if (vitals.bloodPressure) {
+        vitalRecords.push({
+          patient_id: patientId,
+          appointment_id: appointmentId,
+          vital_type: 'blood_pressure',
+          systolic: vitals.bloodPressure.systolic,
+          diastolic: vitals.bloodPressure.diastolic,
+          value: vitals.bloodPressure.systolic, // Store systolic as primary value
+          unit: 'mmHg',
+          notes: vitals.bloodPressure.notes,
+          recorded_by: recordedBy,
+          recorded_at: recordedAt,
+          created_by: user?.id
+        });
+      }
+
+      // Heart Rate
+      if (vitals.heartRate) {
+        vitalRecords.push({
+          patient_id: patientId,
+          appointment_id: appointmentId,
+          vital_type: 'heart_rate',
+          value: vitals.heartRate.value,
+          unit: 'bpm',
+          notes: vitals.heartRate.notes,
+          recorded_by: recordedBy,
+          recorded_at: recordedAt,
+          created_by: user?.id
+        });
+      }
+
+      // Temperature
+      if (vitals.temperature) {
+        vitalRecords.push({
+          patient_id: patientId,
+          appointment_id: appointmentId,
+          vital_type: 'temperature',
+          value: vitals.temperature.value,
+          unit: vitals.temperature.unit || 'F',
+          notes: vitals.temperature.notes,
+          recorded_by: recordedBy,
+          recorded_at: recordedAt,
+          created_by: user?.id
+        });
+      }
+
+      // Respiratory Rate
+      if (vitals.respiratoryRate) {
+        vitalRecords.push({
+          patient_id: patientId,
+          appointment_id: appointmentId,
+          vital_type: 'respiratory_rate',
+          value: vitals.respiratoryRate.value,
+          unit: 'breaths/min',
+          notes: vitals.respiratoryRate.notes,
+          recorded_by: recordedBy,
+          recorded_at: recordedAt,
+          created_by: user?.id
+        });
+      }
+
+      // Oxygen Saturation
+      if (vitals.oxygenSaturation) {
+        vitalRecords.push({
+          patient_id: patientId,
+          appointment_id: appointmentId,
+          vital_type: 'oxygen_saturation',
+          value: vitals.oxygenSaturation.value,
+          unit: '%',
+          notes: vitals.oxygenSaturation.notes,
+          recorded_by: recordedBy,
+          recorded_at: recordedAt,
+          created_by: user?.id
+        });
+      }
+
+      // Weight
+      if (vitals.weight) {
+        vitalRecords.push({
+          patient_id: patientId,
+          appointment_id: appointmentId,
+          vital_type: 'weight',
+          value: vitals.weight.value,
+          unit: vitals.weight.unit || 'lbs',
+          notes: vitals.weight.notes,
+          recorded_by: recordedBy,
+          recorded_at: recordedAt,
+          created_by: user?.id
+        });
+      }
+
+      // Height
+      if (vitals.height) {
+        vitalRecords.push({
+          patient_id: patientId,
+          appointment_id: appointmentId,
+          vital_type: 'height',
+          value: vitals.height.value,
+          unit: vitals.height.unit || 'in',
+          notes: vitals.height.notes,
+          recorded_by: recordedBy,
+          recorded_at: recordedAt,
+          created_by: user?.id
+        });
+      }
+
+      // Pain Level
+      if (vitals.painLevel) {
+        vitalRecords.push({
+          patient_id: patientId,
+          appointment_id: appointmentId,
+          vital_type: 'pain_level',
+          value: vitals.painLevel.value,
+          unit: '0-10 scale',
+          notes: vitals.painLevel.notes,
+          recorded_by: recordedBy,
+          recorded_at: recordedAt,
+          created_by: user?.id
+        });
+      }
+
+      if (vitalRecords.length === 0) {
+        return {
+          success: false,
+          error: 'No vital signs provided to record'
+        };
+      }
+
+      // Insert all vital signs
+      const { data, error } = await supabase
+        .from('vital_signs')
+        .insert(vitalRecords)
+        .select();
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        data,
+        message: `Recorded ${vitalRecords.length} vital sign(s) successfully`
+      };
+    } catch (error) {
+      console.error('Error recording vitals suite:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to record vital signs'
+      };
+    }
+  }
+
+  /**
+   * Update a vital sign record
+   */
+  async updateVitalSign(id: string, updates: Partial<SupabaseVitalSign>) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      const { data, error } = await supabase
+        .from('vital_signs')
+        .update({
+          ...updates,
+          updated_by: user?.id
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        data
+      };
+    } catch (error) {
+      console.error('Error updating vital sign:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to update vital sign'
+      };
+    }
+  }
+
+  /**
+   * Delete a vital sign record
+   */
+  async deleteVitalSign(id: string) {
+    try {
+      const { data, error } = await supabase
+        .from('vital_signs')
+        .delete()
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        data,
+        message: 'Vital sign deleted successfully'
+      };
+    } catch (error) {
+      console.error('Error deleting vital sign:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to delete vital sign'
+      };
+    }
+  }
+
+  /**
+   * Get vital signs by appointment
+   */
+  async getVitalsByAppointment(appointmentId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('vital_signs')
+        .select(`
+          *,
+          patients!inner(first_name, last_name)
+        `)
+        .eq('appointment_id', appointmentId)
+        .order('recorded_at', { ascending: false });
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        data: data || []
+      };
+    } catch (error) {
+      console.error('Error fetching vitals by appointment:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch vitals by appointment'
       };
     }
   }
@@ -1031,6 +2130,201 @@ export class SupabaseClinicalNotesService {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to update clinical note'
+      };
+    }
+  }
+
+  /**
+   * Add a new clinical note with enhanced functionality
+   */
+  async addClinicalNote(noteData: {
+    patientId: string;
+    appointmentId?: string;
+    noteType: 'progress_note' | 'consultation' | 'discharge_summary' | 'admission_note' | 'procedure_note' | 'other';
+    subject: string;
+    content: string;
+    isConfidential?: boolean;
+    authorId: string;
+  }) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      const { data, error } = await supabase
+        .from('clinical_notes')
+        .insert({
+          patient_id: noteData.patientId,
+          appointment_id: noteData.appointmentId,
+          note_type: noteData.noteType,
+          subject: noteData.subject,
+          content: noteData.content,
+          is_confidential: noteData.isConfidential || false,
+          author_id: noteData.authorId,
+          created_by: user?.id
+        })
+        .select(`
+          *,
+          patients!inner(first_name, last_name)
+        `)
+        .single();
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        data,
+        message: 'Clinical note added successfully'
+      };
+    } catch (error) {
+      console.error('Error adding clinical note:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to add clinical note'
+      };
+    }
+  }
+
+  /**
+   * Get notes by appointment
+   */
+  async getNotesByAppointment(appointmentId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('clinical_notes')
+        .select(`
+          *,
+          patients!inner(first_name, last_name)
+        `)
+        .eq('appointment_id', appointmentId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        data: data || []
+      };
+    } catch (error) {
+      console.error('Error fetching notes by appointment:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch notes by appointment'
+      };
+    }
+  }
+
+  /**
+   * Get notes by type
+   */
+  async getNotesByType(patientId: string, noteType: string) {
+    try {
+      const { data, error } = await supabase
+        .from('clinical_notes')
+        .select(`
+          *,
+          patients!inner(first_name, last_name)
+        `)
+        .eq('patient_id', patientId)
+        .eq('note_type', noteType)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        data: data || []
+      };
+    } catch (error) {
+      console.error('Error fetching notes by type:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch notes by type'
+      };
+    }
+  }
+
+  /**
+   * Sign a clinical note
+   */
+  async signNote(id: string) {
+    try {
+      const { data, error } = await supabase
+        .from('clinical_notes')
+        .update({
+          signed_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        data,
+        message: 'Clinical note signed successfully'
+      };
+    } catch (error) {
+      console.error('Error signing clinical note:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to sign clinical note'
+      };
+    }
+  }
+
+  /**
+   * Delete a clinical note
+   */
+  async deleteNote(id: string) {
+    try {
+      const { data, error } = await supabase
+        .from('clinical_notes')
+        .delete()
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        data,
+        message: 'Clinical note deleted successfully'
+      };
+    } catch (error) {
+      console.error('Error deleting clinical note:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to delete clinical note'
+      };
+    }
+  }
+
+  /**
+   * Get recent notes for dashboard
+   */
+  async getRecentNotes(limit = 10) {
+    try {
+      const { data, error } = await supabase
+        .from('clinical_notes')
+        .select(`
+          *,
+          patients!inner(first_name, last_name)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        data: data || []
+      };
+    } catch (error) {
+      console.error('Error fetching recent notes:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch recent notes'
       };
     }
   }
@@ -1508,6 +2802,396 @@ export class SupabaseBillingService {
       };
     }
   }
+
+  /**
+   * Get payment history for a patient
+   */
+  async getPatientPaymentHistory(patientId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('payment_history')
+        .select(`
+          *,
+          invoices(invoice_number, total_amount)
+        `)
+        .eq('patient_id', patientId)
+        .order('payment_date', { ascending: false });
+
+      if (error) throw error;
+
+      return { success: true, data: data || [] };
+    } catch (error) {
+      console.error('Error fetching payment history:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch payment history'
+      };
+    }
+  }
+
+  /**
+   * Add payment record
+   */
+//   async addPayment(paymentData: Partial<SupabasePaymentHistory>) {
+//     try {
+//       const { data: { user } } = await supabase.auth.getUser();
+      
+//       const { data, error } = await supabase
+//         .from('payment_history')
+//         .insert([{
+//           ...paymentData,
+//           created_by: user?.id
+//         }])
+//         .select()
+//         .single();
+
+//       if (error) throw error;
+
+//       // Update invoice paid_amount if invoice_id is provided
+//       if (paymentData.invoice_id) {
+//         const { data: invoice } = await supabase
+//           .from('invoices')
+//           .select('paid_amount, total_amount')
+//           .eq('id', paymentData.invoice_id)
+//           .single();
+
+//         if (invoice) {
+//           const newPaidAmount = (invoice.paid_amount || 0) + (paymentData.amount || 0);
+//           const newStatus = newPaidAmount >= invoice.total_amount ? 'paid' : 'sent';
+
+//           await supabase
+//             .from('invoices')
+//             .update({
+//               paid_amount: newPaidAmount,
+//               status: newStatus
+//             })
+//             .eq('id', paymentData.invoice_id);
+//         }
+//       }
+
+//       return { success: true, data };
+//     } catch (error) {
+//       console.error('Error adding payment:', error);
+//       return {
+//         success: false,
+//         error: error instanceof Error ? error.message : 'Failed to add payment'
+//       };
+//     }
+//   }
+
+  /**
+   * Check insurance eligibility (mock implementation)
+   */
+  async checkInsuranceEligibility(patientId: string) {
+    try {
+      const { data: insurance, error } = await supabase
+        .from('patient_insurance')
+        .select('*')
+        .eq('patient_id', patientId)
+        .eq('is_active', true)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+
+      if (!insurance) {
+        return {
+          success: true,
+          data: {
+            eligible: false,
+            message: 'No active insurance found',
+            coverage: null
+          }
+        };
+      }
+
+      // Mock eligibility check
+      const today = new Date();
+      const effectiveDate = new Date(insurance.effective_date || '1900-01-01');
+      const expirationDate = new Date(insurance.expiration_date || '2099-12-31');
+
+      const eligible = today >= effectiveDate && today <= expirationDate;
+
+      return {
+        success: true,
+        data: {
+          eligible,
+          message: eligible ? 'Coverage active' : 'Coverage expired or not yet effective',
+          coverage: {
+            provider: insurance.insurance_provider,
+            policyNumber: insurance.policy_number,
+            groupNumber: insurance.group_number,
+            copay: insurance.copay_amount,
+            deductible: insurance.deductible_amount,
+            effectiveDate: insurance.effective_date,
+            expirationDate: insurance.expiration_date
+          }
+        }
+      };
+    } catch (error) {
+      console.error('Error checking insurance eligibility:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to check insurance eligibility'
+      };
+    }
+  }
+
+  /**
+   * Get patient balance summary
+   */
+  async getPatientBalance(patientId: string) {
+    try {
+      const { data: invoices, error: invoiceError } = await supabase
+        .from('invoices')
+        .select('total_amount, paid_amount, status')
+        .eq('patient_id', patientId);
+
+      if (invoiceError) throw invoiceError;
+
+      const summary = invoices?.reduce((acc, invoice) => {
+        acc.totalBilled += invoice.total_amount || 0;
+        acc.totalPaid += invoice.paid_amount || 0;
+        acc.totalBalance += (invoice.total_amount || 0) - (invoice.paid_amount || 0);
+        
+        if (invoice.status === 'overdue') {
+          acc.overdueBalance += (invoice.total_amount || 0) - (invoice.paid_amount || 0);
+        }
+        
+        return acc;
+      }, {
+        totalBilled: 0,
+        totalPaid: 0,
+        totalBalance: 0,
+        overdueBalance: 0
+      }) || {
+        totalBilled: 0,
+        totalPaid: 0,
+        totalBalance: 0,
+        overdueBalance: 0
+      };
+
+      return { success: true, data: summary };
+    } catch (error) {
+      console.error('Error fetching patient balance:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch patient balance'
+      };
+    }
+  }
+
+  /**
+   * Get detailed insurance coverage information
+   */
+  async getInsuranceCoverage(patientId: string) {
+    try {
+      const { data: insuranceList, error } = await supabase
+        .from('patient_insurance')
+        .select('*')
+        .eq('patient_id', patientId)
+        .order('is_active', { ascending: false })
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        data: insuranceList || [],
+        primaryInsurance: insuranceList?.find(ins => ins.is_active) || null
+      };
+    } catch (error) {
+      console.error('Error fetching insurance coverage:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch insurance coverage'
+      };
+    }
+  }
+
+  /**
+   * Verify insurance benefits for a specific service
+   */
+  async verifyInsuranceBenefits(patientId: string, serviceCode: string) {
+    try {
+      const { data: insurance, error: insuranceError } = await supabase
+        .from('patient_insurance')
+        .select('*')
+        .eq('patient_id', patientId)
+        .eq('is_active', true)
+        .single();
+
+      if (insuranceError && insuranceError.code !== 'PGRST116') throw insuranceError;
+
+      if (!insurance) {
+        return {
+          success: true,
+          data: {
+            covered: false,
+            message: 'No active insurance found',
+            estimatedPatientResponsibility: null,
+            copay: 0,
+            deductible: 0
+          }
+        };
+      }
+
+      // Get service information
+      const { data: service, error: serviceError } = await supabase
+        .from('service_codes')
+        .select('*')
+        .eq('code', serviceCode)
+        .single();
+
+      if (serviceError && serviceError.code !== 'PGRST116') throw serviceError;
+
+      // Mock benefit verification
+      const mockCoverage = {
+        covered: true,
+        coveragePercentage: 80, // Mock 80% coverage
+        copay: insurance.copay_amount || 25,
+        deductible: insurance.deductible_amount || 500,
+        message: 'Service covered under current plan'
+      };
+
+      const servicePrice = service?.default_price || 100;
+      const estimatedInsurancePay = servicePrice * (mockCoverage.coveragePercentage / 100);
+      const estimatedPatientResponsibility = servicePrice - estimatedInsurancePay + mockCoverage.copay;
+
+      return {
+        success: true,
+        data: {
+          ...mockCoverage,
+          estimatedPatientResponsibility,
+          estimatedInsurancePay,
+          servicePrice,
+          serviceDescription: service?.description || 'Unknown service'
+        }
+      };
+    } catch (error) {
+      console.error('Error verifying insurance benefits:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to verify insurance benefits'
+      };
+    }
+  }
+
+  /**
+   * Submit insurance claim
+   */
+  async submitInsuranceClaim(claimData: {
+    invoiceId: string;
+    patientId: string;
+    insuranceProvider: string;
+    policyNumber?: string;
+    groupNumber?: string;
+  }) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      const claimNumber = `CLM-${Date.now()}`;
+      
+      const { data, error } = await supabase
+        .from('insurance_claims')
+        .insert({
+          invoice_id: claimData.invoiceId,
+          patient_id: claimData.patientId,
+          claim_number: claimNumber,
+          insurance_provider: claimData.insuranceProvider,
+          policy_number: claimData.policyNumber,
+          group_number: claimData.groupNumber,
+          submitted_date: new Date().toISOString(),
+          status: 'pending',
+          created_by: user?.id
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        data,
+        message: `Insurance claim ${claimNumber} submitted successfully`
+      };
+    } catch (error) {
+      console.error('Error submitting insurance claim:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to submit insurance claim'
+      };
+    }
+  }
+
+  /**
+   * Get insurance claims for a patient
+   */
+  async getPatientInsuranceClaims(patientId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('insurance_claims')
+        .select(`
+          *,
+          invoices!inner(invoice_number, total_amount)
+        `)
+        .eq('patient_id', patientId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        data: data || []
+      };
+    } catch (error) {
+      console.error('Error fetching insurance claims:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch insurance claims'
+      };
+    }
+  }
+
+  /**
+   * Process insurance claim response
+   */
+  async processClaimResponse(claimId: string, response: {
+    status: 'approved' | 'denied' | 'partial';
+    approvedAmount?: number;
+    deniedAmount?: number;
+    reasonCode?: string;
+    reasonDescription?: string;
+  }) {
+    try {
+      const { data, error } = await supabase
+        .from('insurance_claims')
+        .update({
+          status: response.status,
+          approved_amount: response.approvedAmount,
+          denied_amount: response.deniedAmount,
+          reason_code: response.reasonCode,
+          reason_description: response.reasonDescription,
+          processed_date: new Date().toISOString()
+        })
+        .eq('id', claimId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        data,
+        message: 'Insurance claim response processed successfully'
+      };
+    } catch (error) {
+      console.error('Error processing claim response:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to process claim response'
+      };
+    }
+  }
 }
 
 /**
@@ -1604,4 +3288,5 @@ export const clinicalNotesService = new SupabaseClinicalNotesService();
 export const medicationsService = new SupabaseMedicationsService();
 export const prescriptionsService = new SupabasePrescriptionsService();
 export const billingService = new SupabaseBillingService();
+export const clinicalService = new SupabaseClinicalService();
 export const reportsService = new SupabaseReportsService();

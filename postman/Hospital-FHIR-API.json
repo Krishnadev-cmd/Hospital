@@ -1,0 +1,777 @@
+{
+  "info": {
+    "name": "Hospital FHIR EHR API",
+    "description": "Comprehensive FHIR-based Electronic Health Records API for hospital management",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "fhirBaseUrl",
+      "value": "https://api.practicefusion.com/fhir/R4",
+      "type": "string"
+    },
+    {
+      "key": "fhirClientId",
+      "value": "your-client-id",
+      "type": "string"
+    },
+    {
+      "key": "fhirClientSecret",
+      "value": "your-client-secret",
+      "type": "string"
+    },
+    {
+      "key": "fhirAccessToken",
+      "value": "your-access-token",
+      "type": "string"
+    },
+    {
+      "key": "patientId",
+      "value": "example-patient-id",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Configuration",
+      "item": [
+        {
+          "name": "Test FHIR Connection",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"baseUrl\": \"{{fhirBaseUrl}}\",\n  \"clientId\": \"{{fhirClientId}}\",\n  \"clientSecret\": \"{{fhirClientSecret}}\",\n  \"accessToken\": \"{{fhirAccessToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/fhir/test",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "fhir", "test"]
+            },
+            "description": "Test FHIR server connection with provided credentials"
+          }
+        },
+        {
+          "name": "Get Current Configuration",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/fhir/config",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "fhir", "config"]
+            },
+            "description": "Get current FHIR configuration (without sensitive data)"
+          }
+        },
+        {
+          "name": "Validate Configuration",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"baseUrl\": \"{{fhirBaseUrl}}\",\n  \"clientId\": \"{{fhirClientId}}\",\n  \"clientSecret\": \"{{fhirClientSecret}}\",\n  \"accessToken\": \"{{fhirAccessToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/fhir/config",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "fhir", "config"]
+            },
+            "description": "Validate FHIR configuration parameters"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Patients",
+      "item": [
+        {
+          "name": "Search Patients",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-fhir-base-url",
+                "value": "{{fhirBaseUrl}}"
+              },
+              {
+                "key": "x-fhir-client-id",
+                "value": "{{fhirClientId}}"
+              },
+              {
+                "key": "x-fhir-client-secret",
+                "value": "{{fhirClientSecret}}"
+              },
+              {
+                "key": "x-fhir-access-token",
+                "value": "{{fhirAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/fhir/patients?_count=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "fhir", "patients"],
+              "query": [
+                {
+                  "key": "_count",
+                  "value": "10"
+                },
+                {
+                  "key": "name",
+                  "value": "Smith",
+                  "disabled": true
+                },
+                {
+                  "key": "gender",
+                  "value": "male",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Search for patients with optional filters"
+          }
+        },
+        {
+          "name": "Create Patient",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-fhir-base-url",
+                "value": "{{fhirBaseUrl}}"
+              },
+              {
+                "key": "x-fhir-client-id",
+                "value": "{{fhirClientId}}"
+              },
+              {
+                "key": "x-fhir-client-secret",
+                "value": "{{fhirClientSecret}}"
+              },
+              {
+                "key": "x-fhir-access-token",
+                "value": "{{fhirAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"middleName\": \"Michael\",\n  \"dateOfBirth\": \"1990-01-15\",\n  \"gender\": \"male\",\n  \"phone\": \"555-0123\",\n  \"email\": \"john.doe@example.com\",\n  \"address\": \"123 Main St\",\n  \"city\": \"Anytown\",\n  \"state\": \"CA\",\n  \"postalCode\": \"12345\",\n  \"country\": \"US\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/fhir/patients",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "fhir", "patients"]
+            },
+            "description": "Create a new patient record"
+          }
+        },
+        {
+          "name": "Get Patient by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-fhir-base-url",
+                "value": "{{fhirBaseUrl}}"
+              },
+              {
+                "key": "x-fhir-client-id",
+                "value": "{{fhirClientId}}"
+              },
+              {
+                "key": "x-fhir-client-secret",
+                "value": "{{fhirClientSecret}}"
+              },
+              {
+                "key": "x-fhir-access-token",
+                "value": "{{fhirAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/fhir/patients/{{patientId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "fhir", "patients", "{{patientId}}"]
+            },
+            "description": "Get a specific patient by ID"
+          }
+        },
+        {
+          "name": "Update Patient",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-fhir-base-url",
+                "value": "{{fhirBaseUrl}}"
+              },
+              {
+                "key": "x-fhir-client-id",
+                "value": "{{fhirClientId}}"
+              },
+              {
+                "key": "x-fhir-client-secret",
+                "value": "{{fhirClientSecret}}"
+              },
+              {
+                "key": "x-fhir-access-token",
+                "value": "{{fhirAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"middleName\": \"Michael\",\n  \"dateOfBirth\": \"1990-01-15\",\n  \"gender\": \"male\",\n  \"phone\": \"555-0123\",\n  \"email\": \"john.doe.updated@example.com\",\n  \"address\": \"456 Oak Ave\",\n  \"city\": \"Anytown\",\n  \"state\": \"CA\",\n  \"postalCode\": \"12345\",\n  \"country\": \"US\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/fhir/patients/{{patientId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "fhir", "patients", "{{patientId}}"]
+            },
+            "description": "Update an existing patient record"
+          }
+        },
+        {
+          "name": "Get Patient Vitals",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-fhir-base-url",
+                "value": "{{fhirBaseUrl}}"
+              },
+              {
+                "key": "x-fhir-client-id",
+                "value": "{{fhirClientId}}"
+              },
+              {
+                "key": "x-fhir-client-secret",
+                "value": "{{fhirClientSecret}}"
+              },
+              {
+                "key": "x-fhir-access-token",
+                "value": "{{fhirAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/fhir/patients/{{patientId}}/vitals",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "fhir", "patients", "{{patientId}}", "vitals"]
+            },
+            "description": "Get vital signs for a specific patient"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Clinical Data",
+      "item": [
+        {
+          "name": "Observations",
+          "item": [
+            {
+              "name": "Create Vital Signs",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-fhir-base-url",
+                    "value": "{{fhirBaseUrl}}"
+                  },
+                  {
+                    "key": "x-fhir-client-id",
+                    "value": "{{fhirClientId}}"
+                  },
+                  {
+                    "key": "x-fhir-client-secret",
+                    "value": "{{fhirClientSecret}}"
+                  },
+                  {
+                    "key": "x-fhir-access-token",
+                    "value": "{{fhirAccessToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"patientId\": \"{{patientId}}\",\n  \"category\": \"vital-signs\",\n  \"code\": \"8302-2\",\n  \"value\": \"180\",\n  \"unit\": \"cm\",\n  \"notes\": \"Height measurement during routine checkup\",\n  \"status\": \"final\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/fhir/observations",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "fhir", "observations"]
+                },
+                "description": "Record vital signs observation"
+              }
+            },
+            {
+              "name": "Search Observations",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "x-fhir-base-url",
+                    "value": "{{fhirBaseUrl}}"
+                  },
+                  {
+                    "key": "x-fhir-client-id",
+                    "value": "{{fhirClientId}}"
+                  },
+                  {
+                    "key": "x-fhir-client-secret",
+                    "value": "{{fhirClientSecret}}"
+                  },
+                  {
+                    "key": "x-fhir-access-token",
+                    "value": "{{fhirAccessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/fhir/observations?patient={{patientId}}&category=vital-signs&_count=20",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "fhir", "observations"],
+                  "query": [
+                    {
+                      "key": "patient",
+                      "value": "{{patientId}}"
+                    },
+                    {
+                      "key": "category",
+                      "value": "vital-signs"
+                    },
+                    {
+                      "key": "_count",
+                      "value": "20"
+                    },
+                    {
+                      "key": "code",
+                      "value": "8302-2",
+                      "disabled": true
+                    },
+                    {
+                      "key": "date",
+                      "value": "ge2023-01-01",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "Search observations with filters"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Conditions",
+          "item": [
+            {
+              "name": "Create Condition",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-fhir-base-url",
+                    "value": "{{fhirBaseUrl}}"
+                  },
+                  {
+                    "key": "x-fhir-client-id",
+                    "value": "{{fhirClientId}}"
+                  },
+                  {
+                    "key": "x-fhir-client-secret",
+                    "value": "{{fhirClientSecret}}"
+                  },
+                  {
+                    "key": "x-fhir-access-token",
+                    "value": "{{fhirAccessToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"patientId\": \"{{patientId}}\",\n  \"code\": \"59621000\",\n  \"display\": \"Hypertension\",\n  \"clinicalStatus\": \"active\",\n  \"verificationStatus\": \"confirmed\",\n  \"severity\": \"moderate\",\n  \"onsetDate\": \"2023-01-15\",\n  \"notes\": \"Patient diagnosed with stage 1 hypertension\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/fhir/conditions",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "fhir", "conditions"]
+                },
+                "description": "Create a new condition/diagnosis"
+              }
+            },
+            {
+              "name": "Get Patient Conditions",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "x-fhir-base-url",
+                    "value": "{{fhirBaseUrl}}"
+                  },
+                  {
+                    "key": "x-fhir-client-id",
+                    "value": "{{fhirClientId}}"
+                  },
+                  {
+                    "key": "x-fhir-client-secret",
+                    "value": "{{fhirClientSecret}}"
+                  },
+                  {
+                    "key": "x-fhir-access-token",
+                    "value": "{{fhirAccessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/fhir/conditions?patient={{patientId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "fhir", "conditions"],
+                  "query": [
+                    {
+                      "key": "patient",
+                      "value": "{{patientId}}"
+                    }
+                  ]
+                },
+                "description": "Get all conditions for a patient"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Medications",
+          "item": [
+            {
+              "name": "Create Medication Request",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-fhir-base-url",
+                    "value": "{{fhirBaseUrl}}"
+                  },
+                  {
+                    "key": "x-fhir-client-id",
+                    "value": "{{fhirClientId}}"
+                  },
+                  {
+                    "key": "x-fhir-client-secret",
+                    "value": "{{fhirClientSecret}}"
+                  },
+                  {
+                    "key": "x-fhir-access-token",
+                    "value": "{{fhirAccessToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"patientId\": \"{{patientId}}\",\n  \"medication\": \"Lisinopril 10mg\",\n  \"dosage\": \"Take 1 tablet by mouth daily\",\n  \"quantity\": 30,\n  \"refills\": 5,\n  \"instructions\": \"Take with food, monitor blood pressure\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/fhir/medications",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "fhir", "medications"]
+                },
+                "description": "Create a new medication request/prescription"
+              }
+            },
+            {
+              "name": "Get Patient Medications",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "x-fhir-base-url",
+                    "value": "{{fhirBaseUrl}}"
+                  },
+                  {
+                    "key": "x-fhir-client-id",
+                    "value": "{{fhirClientId}}"
+                  },
+                  {
+                    "key": "x-fhir-client-secret",
+                    "value": "{{fhirClientSecret}}"
+                  },
+                  {
+                    "key": "x-fhir-access-token",
+                    "value": "{{fhirAccessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/fhir/medications?patient={{patientId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "fhir", "medications"],
+                  "query": [
+                    {
+                      "key": "patient",
+                      "value": "{{patientId}}"
+                    }
+                  ]
+                },
+                "description": "Get all medications for a patient"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Allergies",
+          "item": [
+            {
+              "name": "Create Allergy",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "x-fhir-base-url",
+                    "value": "{{fhirBaseUrl}}"
+                  },
+                  {
+                    "key": "x-fhir-client-id",
+                    "value": "{{fhirClientId}}"
+                  },
+                  {
+                    "key": "x-fhir-client-secret",
+                    "value": "{{fhirClientSecret}}"
+                  },
+                  {
+                    "key": "x-fhir-access-token",
+                    "value": "{{fhirAccessToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"patientId\": \"{{patientId}}\",\n  \"allergen\": \"Penicillin\",\n  \"reaction\": \"Skin rash\",\n  \"severity\": \"moderate\",\n  \"type\": \"allergy\",\n  \"category\": \"medication\",\n  \"notes\": \"Patient reports rash and itching when taking penicillin\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/fhir/allergies",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "fhir", "allergies"]
+                },
+                "description": "Create a new allergy/intolerance record"
+              }
+            },
+            {
+              "name": "Get Patient Allergies",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "x-fhir-base-url",
+                    "value": "{{fhirBaseUrl}}"
+                  },
+                  {
+                    "key": "x-fhir-client-id",
+                    "value": "{{fhirClientId}}"
+                  },
+                  {
+                    "key": "x-fhir-client-secret",
+                    "value": "{{fhirClientSecret}}"
+                  },
+                  {
+                    "key": "x-fhir-access-token",
+                    "value": "{{fhirAccessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/fhir/allergies?patient={{patientId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "fhir", "allergies"],
+                  "query": [
+                    {
+                      "key": "patient",
+                      "value": "{{patientId}}"
+                    }
+                  ]
+                },
+                "description": "Get all allergies for a patient"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Appointments",
+      "item": [
+        {
+          "name": "Search Encounters",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-fhir-base-url",
+                "value": "{{fhirBaseUrl}}"
+              },
+              {
+                "key": "x-fhir-client-id",
+                "value": "{{fhirClientId}}"
+              },
+              {
+                "key": "x-fhir-client-secret",
+                "value": "{{fhirClientSecret}}"
+              },
+              {
+                "key": "x-fhir-access-token",
+                "value": "{{fhirAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/fhir/encounters?_count=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "fhir", "encounters"],
+              "query": [
+                {
+                  "key": "_count",
+                  "value": "10"
+                },
+                {
+                  "key": "patient",
+                  "value": "{{patientId}}",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "finished",
+                  "disabled": true
+                },
+                {
+                  "key": "date",
+                  "value": "ge2023-01-01",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Search encounters/appointments"
+          }
+        },
+        {
+          "name": "Get Patient Encounters",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-fhir-base-url",
+                "value": "{{fhirBaseUrl}}"
+              },
+              {
+                "key": "x-fhir-client-id",
+                "value": "{{fhirClientId}}"
+              },
+              {
+                "key": "x-fhir-client-secret",
+                "value": "{{fhirClientSecret}}"
+              },
+              {
+                "key": "x-fhir-access-token",
+                "value": "{{fhirAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/fhir/encounters?patient={{patientId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "fhir", "encounters"],
+              "query": [
+                {
+                  "key": "patient",
+                  "value": "{{patientId}}"
+                }
+              ]
+            },
+            "description": "Get all encounters for a specific patient"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Billing",
+      "item": [
+        {
+          "name": "Get Patient Coverage",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-fhir-base-url",
+                "value": "{{fhirBaseUrl}}"
+              },
+              {
+                "key": "x-fhir-client-id",
+                "value": "{{fhirClientId}}"
+              },
+              {
+                "key": "x-fhir-client-secret",
+                "value": "{{fhirClientSecret}}"
+              },
+              {
+                "key": "x-fhir-access-token",
+                "value": "{{fhirAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/fhir/coverage?patient={{patientId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "fhir", "coverage"],
+              "query": [
+                {
+                  "key": "patient",
+                  "value": "{{patientId}}"
+                }
+              ]
+            },
+            "description": "Get insurance coverage information for a patient"
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-generate patient ID for testing if not set",
+          "if (!pm.collectionVariables.get('patientId') || pm.collectionVariables.get('patientId') === 'example-patient-id') {",
+          "    pm.collectionVariables.set('patientId', 'test-patient-' + Math.random().toString(36).substr(2, 9));",
+          "}"
+        ]
+      }
+    }
+  ]
+}

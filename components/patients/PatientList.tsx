@@ -5,7 +5,7 @@ import { Search, Plus, Filter, MoreVertical, Phone, Mail, MapPin, Calendar, User
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { patientService, SupabasePatient } from '../../lib/services/supabase';
+import { patientService, SupabasePatient } from '../../lib/services/fhir';
 import PatientForm from './PatientForm';
 
 interface PatientListProps {
